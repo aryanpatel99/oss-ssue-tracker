@@ -1,0 +1,26 @@
+README.md
+  h_ccbfe03d15f891 5-270
+config.yaml
+  h_ccbfe03d15f891 1,4-9,23-24,27-96,98-130,132-168
+main.py
+  h_ccbfe03d15f891 3-5,15,38,46,49,60,82,102-103,106-150,152,155-161,164,168,193,202,204
+reports/2026-09-14.md
+  h_ccbfe03d15f891 3-268
+tracker/clotributor_client.py
+  h_ccbfe03d15f891 1-105
+tracker/github_client.py
+  h_ccbfe03d15f891 12,21,28,51,74-99,101-107,110-111,113,116-134,136-178,180-226,230-232,234-236,241,244-245,249,251,255-274,276
+tracker/renderer.py
+  h_ccbfe03d15f891 9-11,29,37-38,44,57,59,61,68,71-72,75,83-86,91-92,94-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4cc66b65dc3d6b02f628e2de789677f3f3598cd8",
+  "prompts": {},
+  "humans": {
+    "h_ccbfe03d15f891": {
+      "author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
