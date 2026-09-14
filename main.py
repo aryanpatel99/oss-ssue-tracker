@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-CNCF Daily Issue Tracker — Main Entry Point
-Scans top CNCF repositories for beginner-friendly & mentorship issues and updates README / reports.
+CNCF & YC Startup Issue Tracker
+Scans CNCF projects and high-growth YC open-source startups for open issues
+with active discussions, unassigned status, and no linked pull requests.
 """
 
 import os
 import sys
 import argparse
 import logging
-from datetime import datetime, timezone
 import yaml
 
 from tracker.github_client import GitHubClient
+from tracker.clotributor_client import ClotributorClient
 from tracker.renderer import MarkdownRenderer
 from tracker.notifier import Notifier
 
@@ -34,7 +35,7 @@ def load_config(config_path: str) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="CNCF Daily Issue Tracker for LFX Mentorship applicants."
+        description="Tracks CNCF and YC open source startup issues with active discussions and no PRs."
     )
     parser.add_argument(
         "--config",
@@ -42,10 +43,10 @@ def main():
         help="Path to config.yaml (default: config.yaml)",
     )
     parser.add_argument(
-        "--hours",
+        "--days",
         type=int,
         default=None,
-        help="Number of past hours to search (overrides config default)",
+        help="Lookback window in days (overrides config days_back)",
     )
     parser.add_argument(
         "--token",
@@ -56,7 +57,7 @@ def main():
     parser.add_argument(
         "--update-readme",
         action="store_true",
-        help="Update root README.md with latest issues dashboard",
+        help="Update root README.md with latest issues table",
     )
     parser.add_argument(
         "--save-report",
@@ -78,7 +79,7 @@ def main():
     parser.add_argument(
         "--notify",
         action="store_true",
-        help="Dispatch notifications via configured webhooks (Discord/Slack/Telegram)",
+        help="Dispatch notifications via configured webhooks",
     )
     parser.add_argument(
         "--dry-run",
@@ -98,36 +99,76 @@ def main():
     # Load configuration
     config = load_config(config_path)
     settings = config.get("settings", {})
-    categories = config.get("categories", [])
+    cncf_projects = config.get("cncf_projects", [])
+    startup_projects = config.get("startup_projects", [])
     target_labels = config.get("target_labels", [])
 
-    hours = args.hours or settings.get("default_hours", 28)
-    batch_size = settings.get("github_search_batch_size", 6)
-    max_per_project = settings.get("max_issues_per_project", 5)
+    days_back = args.days or settings.get("days_back", 7)
+    min_comments = settings.get("min_comments", 1)
+    max_comments = settings.get("max_comments", 6)
+    require_unassigned = settings.get("require_unassigned", True)
+    require_no_linked_prs = settings.get("require_no_linked_prs", True)
+    batch_size = settings.get("github_search_batch_size", 5)
 
-    logger.info(f"Starting CNCF issue collection (window: past {hours} hours)...")
+    all_issues = []
+    seen_urls = set()
 
-    # Initialize GitHub client
-    client = GitHubClient(token=args.token)
-    issues = client.fetch_recent_issues(
-        categories=categories,
-        target_labels=target_labels,
-        hours=hours,
-        max_per_project=max_per_project,
+    # 1. Fetch CNCF issues from Clotributor (verified has_linked_prs: false)
+    logger.info("Fetching CNCF issues from Clotributor API (no linked PRs)...")
+    clotributor = ClotributorClient()
+    clotributor_issues = clotributor.fetch_recent_issues(
+        days_back=days_back,
+        require_no_linked_prs=require_no_linked_prs,
+    )
+    for iss in clotributor_issues:
+        url = iss.get("url")
+        if url and url not in seen_urls:
+            seen_urls.add(url)
+            all_issues.append(iss)
+
+    # 2. Fetch YC & Emerging Startup issues from GitHub API
+    logger.info("Fetching YC & Emerging Open-Source Startup issues from GitHub...")
+    github_client = GitHubClient(token=args.token)
+    startup_issues = github_client.fetch_startup_issues(
+        startup_projects=startup_projects,
+        days_back=days_back,
+        min_comments=min_comments,
+        max_comments=max_comments,
+        require_unassigned=require_unassigned,
+        require_no_linked_prs=require_no_linked_prs,
         batch_size=batch_size,
     )
+    for iss in startup_issues:
+        url = iss.get("url")
+        if url and url not in seen_urls:
+            seen_urls.add(url)
+            all_issues.append(iss)
+
+    # 3. Supplement with direct CNCF GitHub search
+    logger.info("Checking direct CNCF repositories on GitHub...")
+    cncf_gh_issues = github_client.fetch_cncf_issues(
+        cncf_projects=cncf_projects,
+        target_labels=target_labels,
+        days_back=days_back,
+        batch_size=batch_size,
+    )
+    for iss in cncf_gh_issues:
+        url = iss.get("url")
+        if url and url not in seen_urls:
+            seen_urls.add(url)
+            all_issues.append(iss)
+
+    logger.info(f"Total deduplicated issues found across all sources: {len(all_issues)}")
 
     # Initialize Renderer
-    renderer = MarkdownRenderer(issues=issues, hours=hours)
+    renderer = MarkdownRenderer(issues=all_issues, days_back=days_back)
 
     if args.dry_run:
         print("\n" + "=" * 60)
-        print("DRY RUN: Rendered Output Preview")
+        print("Rendered Issues Table Preview")
         print("=" * 60 + "\n")
         print(renderer.render_body())
         return
-
-    project_root = os.path.dirname(os.path.abspath(__file__))
 
     # Save daily digest archive
     if args.save_report:
@@ -149,7 +190,7 @@ def main():
         if os.path.exists(readme_path):
             updated = renderer.update_readme(readme_path)
             if updated:
-                logger.info(f"Updated dashboard in {readme_path}")
+                logger.info(f"Updated issues table in {readme_path}")
             else:
                 logger.warning(f"Failed to update {readme_path}")
         else:
@@ -158,9 +199,9 @@ def main():
     # Send notifications
     if args.notify:
         notifier = Notifier()
-        notifier.notify(issues=issues, hours=hours)
+        notifier.notify(issues=all_issues, hours=days_back * 24)
 
-    logger.info(f"Done! Processed {len(issues)} issues successfully.")
+    logger.info(f"Completed! Processed {len(all_issues)} issues.")
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ logger = logging.getLogger("cncf_tracker")
 
 
 class GitHubClient:
-    """Client to query GitHub Search API for CNCF newcomer and mentorship issues."""
+    """Client to query GitHub Search API for CNCF and YC/OSS startup issues."""
 
     BASE_URL = "https://api.github.com"
 
@@ -18,14 +18,14 @@ class GitHubClient:
         self.session = requests.Session()
         self.session.headers.update({
             "Accept": "application/vnd.github+json",
-            "User-Agent": "CNCF-Daily-Issue-Tracker-LFX",
+            "User-Agent": "CNCF-Startup-Issue-Tracker",
         })
         if self.token:
             self.session.headers["Authorization"] = f"Bearer {self.token}"
             logger.info("GitHubClient initialized with authentication token.")
         else:
             logger.warning(
-                "No GITHUB_TOKEN provided. Operating under strict unauthenticated rate limits (10 search req/min)."
+                "No GITHUB_TOKEN provided. Operating under unauthenticated rate limits (10 search req/min)."
             )
 
     def _handle_rate_limit(self, response: requests.Response) -> None:
@@ -48,7 +48,7 @@ class GitHubClient:
             "q": query,
             "sort": "created",
             "order": "desc",
-            "per_page": 100,
+            "per_page": 50,
         }
 
         try:
@@ -71,147 +71,206 @@ class GitHubClient:
             logger.error(f"Network error querying GitHub API: {e}")
             return []
 
-    def fetch_recent_issues(
+    def has_linked_pr(self, owner: str, repo: str, issue_number: int) -> bool:
+        """
+        Checks whether any pull request is already linked/cross-referenced to this issue.
+        Uses GitHub Timeline API if authenticated.
+        """
+        if not self.token:
+            return False  # Avoid burning unauthenticated rate limits on timeline calls
+
+        url = f"{self.BASE_URL}/repos/{owner}/{repo}/issues/{issue_number}/timeline"
+        try:
+            resp = self.session.get(url, timeout=10)
+            self._handle_rate_limit(resp)
+            if resp.status_code == 200:
+                events = resp.json()
+                for ev in events:
+                    # Look for cross-referenced pull requests
+                    if ev.get("event") == "cross-referenced":
+                        source = ev.get("source", {})
+                        issue = source.get("issue", {})
+                        if issue.get("pull_request") is not None:
+                            return True
+            return False
+        except Exception:
+            return False
+
+    def fetch_startup_issues(
         self,
-        categories: List[Dict[str, Any]],
-        target_labels: List[str],
-        hours: int = 28,
-        max_per_project: int = 5,
-        batch_size: int = 6,
+        startup_projects: List[Dict[str, Any]],
+        days_back: int = 7,
+        min_comments: int = 1,
+        max_comments: int = 6,
+        require_unassigned: bool = True,
+        require_no_linked_prs: bool = True,
+        batch_size: int = 5,
     ) -> List[Dict[str, Any]]:
         """
-        Fetches issues opened in the last `hours` hours matching target labels.
+        Fetches issues from YC / OSS startups with active discussion (1-6 comments),
+        unassigned, and without an open PR.
         """
-        since_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+        since_time = datetime.now(timezone.utc) - timedelta(days=days_back)
         since_iso = since_time.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        # Map repo -> metadata
-        repo_metadata: Dict[str, Dict[str, Any]] = {}
-        all_repos: List[str] = []
+        repo_metadata = {
+            proj["repo"].lower(): {
+                "company": proj.get("company", proj["repo"]),
+                "language": proj.get("language", "Unknown"),
+            }
+            for proj in startup_projects
+        }
 
-        for cat in categories:
-            cat_name = cat.get("name", "Other")
-            for proj in cat.get("projects", []):
-                repo = proj["repo"]
-                all_repos.append(repo)
-                repo_metadata[repo.lower()] = {
-                    "repo": repo,
-                    "category": cat_name,
-                    "language": proj.get("language", "Unknown"),
-                }
+        all_repos = [p["repo"] for p in startup_projects]
+        collected = []
+        seen_urls = set()
 
-        # Deduplicate repos
-        all_repos = list(dict.fromkeys(all_repos))
-        logger.info(f"Monitoring {len(all_repos)} CNCF repositories across categories.")
+        assignee_filter = "no:assignee " if require_unassigned else ""
+        comments_filter = f"comments:{min_comments}..{max_comments} "
 
-        # Prepare label query part: label:"good first issue",label:"help wanted",...
-        # In GitHub search: label:"good first issue","help wanted" matches any
-        labels_query_str = " ".join([f'label:"{label}"' for label in target_labels[:5]])
-        # We can also do a broad search or split by labels if needed
+        logger.info(
+            f"Querying {len(all_repos)} YC/OSS startups (past {days_back}d, {min_comments}-{max_comments} comments, unassigned)..."
+        )
 
-        collected_issues: Dict[str, Dict[str, Any]] = {}
-
-        # Query in repo batches
         for i in range(0, len(all_repos), batch_size):
-            repo_chunk = all_repos[i : i + batch_size]
-            repo_filter = " ".join([f"repo:{r}" for r in repo_chunk])
+            chunk = all_repos[i : i + batch_size]
+            repo_filter = " ".join([f"repo:{r}" for r in chunk])
 
-            # Query: repo:a repo:b is:issue is:open created:>=TIMESTAMP
-            query = f"{repo_filter} is:issue is:open created:>={since_iso}"
-            logger.info(f"Querying batch {i // batch_size + 1}: {len(repo_chunk)} repos...")
-
+            # Query: repo:a repo:b is:issue is:open no:assignee comments:1..6 created:>=ISO
+            query = (
+                f"{repo_filter} is:issue is:open {assignee_filter}{comments_filter}created:>={since_iso}"
+            )
             items = self.search_issues(query)
 
-            # Filter issues by target newcomer/mentorship labels
-            lower_target_labels = [l.lower() for l in target_labels]
-
             for item in items:
-                # Check labels
+                # Ensure it's not a PR
+                if item.get("pull_request") is not None:
+                    continue
+
+                html_url = item.get("html_url", "")
+                if not html_url or html_url in seen_urls:
+                    continue
+
+                # Ensure unassigned
+                if require_unassigned and item.get("assignees"):
+                    continue
+
+                parts = html_url.split("/")
+                if len(parts) < 5:
+                    continue
+                owner = parts[3]
+                repo_name = parts[4]
+                full_repo = f"{owner}/{repo_name}"
+
+                issue_num = item.get("number")
+
+                # Check if a PR is already linked
+                if require_no_linked_prs and self.token:
+                    if self.has_linked_pr(owner, repo_name, issue_num):
+                        continue
+
+                seen_urls.add(html_url)
+                meta = repo_metadata.get(
+                    full_repo.lower(),
+                    {"company": full_repo, "language": "Multi"},
+                )
+
+                item_labels = [lbl.get("name", "") for lbl in item.get("labels", [])]
+
+                collected.append({
+                    "id": item["id"],
+                    "source": "Startup",
+                    "company": meta["company"],
+                    "repo": full_repo,
+                    "number": issue_num,
+                    "title": item.get("title", ""),
+                    "url": html_url,
+                    "language": meta["language"],
+                    "labels": item_labels,
+                    "created_at": item.get("created_at"),
+                    "comments": item.get("comments", 0),
+                })
+
+            time.sleep(1.5)
+
+        logger.info(f"Found {len(collected)} qualifying YC/startup issues with active discussions.")
+        return collected
+
+    def fetch_cncf_issues(
+        self,
+        cncf_projects: List[Dict[str, Any]],
+        target_labels: List[str],
+        days_back: int = 7,
+        batch_size: int = 6,
+    ) -> List[Dict[str, Any]]:
+        """Fetches newcomer & mentorship issues from CNCF repos via GitHub API."""
+        since_time = datetime.now(timezone.utc) - timedelta(days=days_back)
+        since_iso = since_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        repo_metadata = {
+            p["repo"].lower(): {
+                "repo": p["repo"],
+                "language": p.get("language", "Go"),
+            }
+            for p in cncf_projects
+        }
+
+        all_repos = [p["repo"] for p in cncf_projects]
+        collected = []
+        seen_urls = set()
+
+        lower_target_labels = [l.lower() for l in target_labels]
+
+        for i in range(0, len(all_repos), batch_size):
+            chunk = all_repos[i : i + batch_size]
+            repo_filter = " ".join([f"repo:{r}" for r in chunk])
+            query = f"{repo_filter} is:issue is:open created:>={since_iso}"
+
+            items = self.search_issues(query)
+            for item in items:
+                if item.get("pull_request") is not None:
+                    continue
+
+                html_url = item.get("html_url", "")
+                if not html_url or html_url in seen_urls:
+                    continue
+
                 item_labels = [lbl.get("name", "") for lbl in item.get("labels", [])]
                 item_labels_lower = [lbl.lower() for lbl in item_labels]
 
-                # If the issue matches ANY newcomer label OR is in mentorship repo
+                # Match labels
                 is_match = False
-                matched_label = None
-
                 for target_lbl in lower_target_labels:
-                    for ilbl in item_labels_lower:
-                        if target_lbl in ilbl:
-                            is_match = True
-                            matched_label = ilbl
-                            break
-                    if is_match:
+                    if any(target_lbl in ilbl for ilbl in item_labels_lower):
+                        is_match = True
                         break
 
-                # Extract repo owner/name
-                html_url = item.get("html_url", "")
                 parts = html_url.split("/")
-                if len(parts) >= 5:
-                    repo_slug = f"{parts[3]}/{parts[4]}".lower()
-                else:
-                    repo_slug = ""
+                full_repo = f"{parts[3]}/{parts[4]}" if len(parts) >= 5 else ""
 
-                # Special exception: all issues in cncf/mentoring are mentorship-related
-                if repo_slug == "cncf/mentoring":
+                if full_repo.lower() == "cncf/mentoring":
                     is_match = True
 
                 if is_match:
-                    issue_id = item["id"]
-                    if issue_id not in collected_issues:
-                        meta = repo_metadata.get(
-                            repo_slug,
-                            {
-                                "repo": repo_slug,
-                                "category": "Other",
-                                "language": "Unknown",
-                            },
-                        )
+                    seen_urls.add(html_url)
+                    meta = repo_metadata.get(
+                        full_repo.lower(),
+                        {"repo": full_repo, "language": "Go"},
+                    )
+                    collected.append({
+                        "id": item["id"],
+                        "source": "CNCF",
+                        "company": full_repo,
+                        "repo": full_repo,
+                        "number": item.get("number"),
+                        "title": item.get("title", ""),
+                        "url": html_url,
+                        "language": meta["language"],
+                        "labels": item_labels,
+                        "created_at": item.get("created_at"),
+                        "comments": item.get("comments", 0),
+                    })
 
-                        collected_issues[issue_id] = {
-                            "id": issue_id,
-                            "number": item.get("number"),
-                            "title": item.get("title"),
-                            "url": html_url,
-                            "repo": meta["repo"],
-                            "category": meta["category"],
-                            "language": meta["language"],
-                            "labels": item_labels,
-                            "created_at": item.get("created_at"),
-                        }
+            time.sleep(1.5)
 
-            # Sleep slightly to respect rate limits
-            time.sleep(1.8)
-
-        # Global LFX mentorship search across all GitHub to catch untracked CNCF orgs!
-        logger.info("Running global LFX mentorship issue search...")
-        lfx_query = f'is:issue is:open created:>={since_iso} (label:"lfx-mentorship" OR label:"lfx")'
-        lfx_items = self.search_issues(lfx_query)
-        for item in lfx_items:
-            issue_id = item["id"]
-            if issue_id not in collected_issues:
-                html_url = item.get("html_url", "")
-                parts = html_url.split("/")
-                repo_slug = f"{parts[3]}/{parts[4]}" if len(parts) >= 5 else "unknown"
-                meta = repo_metadata.get(
-                    repo_slug.lower(),
-                    {
-                        "repo": repo_slug,
-                        "category": "Mentorship",
-                        "language": "Multi",
-                    },
-                )
-                collected_issues[issue_id] = {
-                    "id": issue_id,
-                    "number": item.get("number"),
-                    "title": item.get("title"),
-                    "url": html_url,
-                    "repo": meta["repo"],
-                    "category": meta["category"],
-                    "language": meta["language"],
-                    "labels": [lbl.get("name", "") for lbl in item.get("labels", [])],
-                    "created_at": item.get("created_at"),
-                }
-
-        results = list(collected_issues.values())
-        logger.info(f"Total matching newcomer & mentorship issues found: {len(results)}")
-        return results
+        return collected

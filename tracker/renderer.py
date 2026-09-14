@@ -6,7 +6,9 @@ from dateutil import parser
 
 
 def relative_time(iso_str: str) -> str:
-    """Converts ISO timestamp to relative time (e.g., '3h ago')."""
+    """Converts ISO timestamp to relative time (e.g., '3d ago')."""
+    if not iso_str:
+        return "-"
     try:
         dt = parser.isoparse(iso_str)
         now = datetime.now(timezone.utc)
@@ -24,7 +26,7 @@ def relative_time(iso_str: str) -> str:
         days = hours // 24
         return f"{days}d ago"
     except Exception:
-        return iso_str[:10] if iso_str else ""
+        return iso_str[:10] if iso_str else "-"
 
 
 def clean_markdown_cell(text: str) -> str:
@@ -32,14 +34,14 @@ def clean_markdown_cell(text: str) -> str:
     if not text:
         return ""
     text = text.replace("|", "\\|").replace("\n", " ").replace("\r", " ")
-    if len(text) > 90:
-        return text[:87] + "..."
+    if len(text) > 85:
+        return text[:82] + "..."
     return text.strip()
 
 
 def format_labels(labels: List[str]) -> str:
     """Formats issue labels into simple code spans."""
-    priority_keywords = ["good first", "help wanted", "lfx", "mentorship", "easy"]
+    priority_keywords = ["good first", "help wanted", "lfx", "mentorship", "easy", "bug", "enhancement"]
     sorted_labels = sorted(
         labels,
         key=lambda l: any(k in l.lower() for k in priority_keywords),
@@ -52,25 +54,25 @@ def format_labels(labels: List[str]) -> str:
 
 
 class MarkdownRenderer:
-    """Renders issue tables with zero extra fluff or emojis."""
+    """Renders unified issues table across CNCF and YC/OSS Startups."""
 
-    def __init__(self, issues: List[Dict[str, Any]], hours: int = 28):
+    def __init__(self, issues: List[Dict[str, Any]], days_back: int = 7):
         self.issues = issues
-        self.hours = hours
+        self.days_back = days_back
         self.now_utc = datetime.now(timezone.utc)
         self.date_str = self.now_utc.strftime("%Y-%m-%d")
 
     def render_body(self) -> str:
         """Renders pure issue table without emojis or filler text."""
         if not self.issues:
-            return f"_No new issues in the last {self.hours} hours._\n"
+            return f"_No open issues without PRs found in the last {self.days_back} days._\n"
 
         lines = [
-            "| Project | Issue | Stack | Labels | Opened |",
-            "| :--- | :--- | :--- | :--- | :--- |",
+            "| Source | Project | Issue | Stack | Labels | Opened | Comments |",
+            "| :--- | :--- | :--- | :--- | :--- | :--- | :---: |",
         ]
 
-        # Sort issues by creation time descending
+        # Sort issues by creation date descending
         sorted_issues = sorted(
             self.issues,
             key=lambda x: x.get("created_at", ""),
@@ -78,14 +80,20 @@ class MarkdownRenderer:
         )
 
         for iss in sorted_issues:
-            repo_link = f"[{iss['repo']}](https://github.com/{iss['repo']})"
-            title = clean_markdown_cell(iss["title"])
+            source = iss.get("source", "OSS")
+            repo = iss.get("repo", "")
+            repo_link = f"[{repo}](https://github.com/{repo})"
+            title = clean_markdown_cell(iss.get("title", ""))
             issue_link = f"[#{iss['number']} {title}]({iss['url']})"
             stack = iss.get("language", "-")
             labels = format_labels(iss.get("labels", []))
             opened = relative_time(iss.get("created_at", ""))
+            comments = iss.get("comments", 0)
+            comments_str = str(comments) if comments > 0 else "-"
 
-            lines.append(f"| {repo_link} | {issue_link} | {stack} | {labels} | {opened} |")
+            lines.append(
+                f"| {source} | {repo_link} | {issue_link} | {stack} | {labels} | {opened} | {comments_str} |"
+            )
 
         return "\n".join(lines) + "\n"
 
