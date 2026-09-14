@@ -1,0 +1,26 @@
+.github/workflows/daily_tracker.yml
+  h_ccbfe03d15f891 47,52
+index.html
+  h_ccbfe03d15f891 1-553
+main.py
+  h_ccbfe03d15f891 51-56,68-79,124-133,191,226-233,237
+tracker/clotributor_client.py
+  h_ccbfe03d15f891 3,23
+tracker/github_client.py
+  h_ccbfe03d15f891 5,102,131-135,137,208
+tracker/html_renderer.py
+  h_ccbfe03d15f891 1-573
+tracker/renderer.py
+  h_ccbfe03d15f891 4,59-64,67,74-80,138-162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5d6f7ba1dec735b9916e1493d53192ca8450bef5",
+  "prompts": {},
+  "humans": {
+    "h_ccbfe03d15f891": {
+      "author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
