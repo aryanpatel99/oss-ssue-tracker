@@ -34,6 +34,7 @@ def clean_markdown_cell(text: str) -> str:
     if not text:
         return ""
     text = text.replace("|", "\\|").replace("\n", " ").replace("\r", " ")
+    text = text.replace("{{", "{ {").replace("}}", "} }").replace("{%", "{ %").replace("%}", "% }")
     if len(text) > 85:
         return text[:82] + "..."
     return text.strip()
