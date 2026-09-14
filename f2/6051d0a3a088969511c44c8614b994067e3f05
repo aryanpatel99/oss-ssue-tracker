@@ -1,0 +1,24 @@
+README.md
+  h_ccbfe03d15f891 1,5-8
+config.yaml
+  h_ccbfe03d15f891 4-6,24,43,73,86,99,108,119
+reports/2026-09-14.md
+  h_ccbfe03d15f891 1,3-6
+tracker/github_client.py
+  h_ccbfe03d15f891 199
+tracker/notifier.py
+  h_ccbfe03d15f891 10,19,23-25,27,30-33,36-39,42-51
+tracker/renderer.py
+  h_ccbfe03d15f891 9,27,31,35-37,41-42,55,63-66,69-70,73-78,80,82-86,88,93-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f26051d0a3a088969511c44c8614b994067e3f05",
+  "prompts": {},
+  "humans": {
+    "h_ccbfe03d15f891": {
+      "author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
