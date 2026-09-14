@@ -91,16 +91,13 @@ class GitHubClient:
 
         for cat in categories:
             cat_name = cat.get("name", "Other")
-            icon = cat.get("icon", "📦")
             for proj in cat.get("projects", []):
                 repo = proj["repo"]
                 all_repos.append(repo)
                 repo_metadata[repo.lower()] = {
                     "repo": repo,
                     "category": cat_name,
-                    "category_icon": icon,
                     "language": proj.get("language", "Unknown"),
-                    "tier": proj.get("tier", "Incubating"),
                 }
 
         # Deduplicate repos
@@ -166,9 +163,7 @@ class GitHubClient:
                             {
                                 "repo": repo_slug,
                                 "category": "Other",
-                                "category_icon": "📦",
                                 "language": "Unknown",
-                                "tier": "CNCF",
                             },
                         )
 
@@ -179,13 +174,9 @@ class GitHubClient:
                             "url": html_url,
                             "repo": meta["repo"],
                             "category": meta["category"],
-                            "category_icon": meta["category_icon"],
                             "language": meta["language"],
-                            "tier": meta["tier"],
                             "labels": item_labels,
                             "created_at": item.get("created_at"),
-                            "comments": item.get("comments", 0),
-                            "author": item.get("user", {}).get("login", "unknown"),
                         }
 
             # Sleep slightly to respect rate limits
@@ -205,10 +196,8 @@ class GitHubClient:
                     repo_slug.lower(),
                     {
                         "repo": repo_slug,
-                        "category": "LFX Mentorship Hub",
-                        "category_icon": "🎓",
+                        "category": "Mentorship",
                         "language": "Multi",
-                        "tier": "Mentorship",
                     },
                 )
                 collected_issues[issue_id] = {
@@ -218,13 +207,9 @@ class GitHubClient:
                     "url": html_url,
                     "repo": meta["repo"],
                     "category": meta["category"],
-                    "category_icon": meta["category_icon"],
                     "language": meta["language"],
-                    "tier": meta["tier"],
                     "labels": [lbl.get("name", "") for lbl in item.get("labels", [])],
                     "created_at": item.get("created_at"),
-                    "comments": item.get("comments", 0),
-                    "author": item.get("user", {}).get("login", "unknown"),
                 }
 
         results = list(collected_issues.values())
