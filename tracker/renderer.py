@@ -1,7 +1,7 @@
 import os
 import re
 from datetime import datetime, timezone
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Union
 from dateutil import parser
 
 
@@ -56,16 +56,28 @@ def format_labels(labels: List[str]) -> str:
 class MarkdownRenderer:
     """Renders unified issues table across CNCF and YC/OSS Startups."""
 
-    def __init__(self, issues: List[Dict[str, Any]], days_back: int = 7):
+    def __init__(
+        self,
+        issues: List[Dict[str, Any]],
+        days_back: Union[int, float] = 7,
+        hours: Optional[int] = None,
+    ):
         self.issues = issues
         self.days_back = days_back
+        self.hours = hours
         self.now_utc = datetime.now(timezone.utc)
         self.date_str = self.now_utc.strftime("%Y-%m-%d")
 
     def render_body(self) -> str:
         """Renders pure issue table without emojis or filler text."""
         if not self.issues:
-            return f"_No open issues without PRs found in the last {self.days_back} days._\n"
+            if self.hours:
+                window_desc = f"{self.hours} hours"
+            elif isinstance(self.days_back, float) and self.days_back.is_integer():
+                window_desc = f"{int(self.days_back)} days"
+            else:
+                window_desc = f"{self.days_back} days"
+            return f"_No open issues without PRs found in the last {window_desc}._\n"
 
         lines = [
             "| Source | Project | Issue | Stack | Labels | Opened | Comments |",
@@ -123,3 +135,28 @@ class MarkdownRenderer:
             f.write(new_content)
 
         return True
+
+    def render_html(self) -> str:
+        """Renders complete standalone index.html page."""
+        from .html_renderer import generate_html_page
+        enriched_issues = []
+        for iss in self.issues:
+            iss_copy = dict(iss)
+            if "opened" not in iss_copy:
+                iss_copy["opened"] = relative_time(iss.get("created_at", ""))
+            enriched_issues.append(iss_copy)
+        return generate_html_page(
+            enriched_issues,
+            last_updated=self.now_utc.strftime("%Y-%m-%d %H:%M UTC")
+        )
+
+    def update_html(self, html_path: str) -> bool:
+        """Updates or generates index.html page."""
+        try:
+            content = self.render_html()
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            return True
+        except Exception:
+            return False
+

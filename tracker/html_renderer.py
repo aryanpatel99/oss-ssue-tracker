@@ -1,0 +1,573 @@
+"""
+HTML Renderer for CNCF & OSS Startup Issues.
+Produces a minimal, high-performance Vercel-style dark theme page
+using Inter, Geist, and Geist Mono fonts, tight tracking,
+and a strict two-color palette (Neutral Dark Slate + Pink Accent).
+"""
+
+import json
+from datetime import datetime, timezone
+from typing import List, Dict, Any
+
+
+def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> str:
+    """Generates a complete standalone index.html page with embedded issues JSON."""
+    if not last_updated:
+        last_updated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    json_data = json.dumps(issues, ensure_ascii=False)
+
+    return f"""<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CNCF &amp; Open Source Startup Issue Tracker</title>
+  <meta name="description" content="Tracks CNCF projects and high-growth YC open-source startups for open issues with active discussions, unassigned status, and no open pull requests.">
+  
+  <!-- Fonts: Geist, Geist Mono, and Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {{
+      darkMode: 'class',
+      theme: {{
+        extend: {{
+          fontFamily: {{
+            sans: ['Geist', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+            mono: ['"Geist Mono"', 'ui-monospace', 'monospace'],
+          }},
+          colors: {{
+            gray: {{
+              750: '#263342',
+              800: '#1f2937',
+              850: '#17202e',
+              900: '#111827',
+              950: '#0b0f17',
+            }}
+          }},
+          letterSpacing: {{
+            tighter: '-0.04em',
+            tight: '-0.025em',
+          }}
+        }}
+      }}
+    }}
+  </script>
+  
+  <style>
+    :root {{
+      --font-sans: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }}
+    body {{
+      font-family: var(--font-sans);
+      letter-spacing: -0.025em;
+      background-color: #0b0f17;
+      color: #ffffff;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }}
+    h1, h2, h3, h4, p, a, span, button, input, time {{
+      letter-spacing: -0.025em;
+    }}
+    ::-webkit-scrollbar {{
+      width: 6px;
+      height: 6px;
+    }}
+    ::-webkit-scrollbar-track {{
+      background: #0b0f17;
+    }}
+    ::-webkit-scrollbar-thumb {{
+      background: #374151;
+      border-radius: 3px;
+    }}
+    ::-webkit-scrollbar-thumb:hover {{
+      background: #4b5563;
+    }}
+  </style>
+</head>
+<body class="bg-[#0b0f17] text-white min-h-screen flex flex-col antialiased selection:bg-pink-500/20 selection:text-pink-300">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-gray-800/80 bg-[#0b0f17]/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      
+      <!-- Brand & Status -->
+      <div class="flex items-center gap-3">
+        <span class="inline-flex shrink-0 rounded-full border border-pink-300/10 bg-pink-400/10 p-2">
+          <svg class="size-5 stroke-pink-500 fill-none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="4"></circle>
+            <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
+            <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
+            <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
+            <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
+          </svg>
+        </span>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-semibold text-white tracking-tight">CNCF &amp; OSS Issue Tracker</h1>
+            <span id="badge-total" class="inline-flex items-center rounded-full border border-pink-300/10 bg-pink-400/10 px-2 py-0.5 text-[10px] font-medium text-pink-400 font-mono">
+              0 Active
+            </span>
+          </div>
+          <p class="text-xs text-gray-400 tracking-tight">Active discussions • Unassigned • No open pull requests</p>
+        </div>
+      </div>
+
+      <!-- Search & External Link -->
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <div class="relative flex-1 md:w-72">
+          <svg class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none stroke-gray-500 fill-none" viewBox="0 0 24 24" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Search issues, repos, labels, stacks..."
+            autocomplete="off"
+            class="w-full rounded-lg bg-gray-800 pl-9 pr-8 py-1.5 text-xs text-white placeholder-gray-500 border border-gray-700/60 outline outline-black/5 focus:outline-none focus:border-pink-400/60 transition duration-150 tracking-tight"
+          />
+          <button id="clear-search" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xs font-mono">✕</button>
+        </div>
+
+        <a
+          href="https://github.com/aryanpatel99/oss-ssue-tracker"
+          target="_blank"
+          rel="noreferrer"
+          class="shrink-0 inline-flex items-center gap-1.5 text-xs font-mono text-gray-400 hover:text-white transition-colors border border-gray-700/60 rounded-lg px-2.5 py-1.5 bg-gray-800 outline outline-black/5 hover:border-gray-600"
+        >
+          <svg class="size-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full flex flex-col gap-5">
+    
+    <!-- Controls Bar: Segmented Tabs + Quick Label Filters -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-gray-800/80">
+      
+      <!-- Source Segmented Control -->
+      <div class="inline-flex items-center rounded-lg bg-gray-800 p-1 border border-gray-700/60 outline outline-black/5 text-xs font-medium self-start">
+        <button
+          type="button"
+          data-source="ALL"
+          class="filter-source-btn rounded-md px-3 py-1 transition-colors text-white bg-[#0b0f17] shadow-sm border border-gray-700/40"
+        >
+          All <span id="count-all" class="ml-1 text-[10px] font-mono text-gray-400">0</span>
+        </button>
+        <button
+          type="button"
+          data-source="CNCF"
+          class="filter-source-btn rounded-md px-3 py-1 transition-colors text-gray-400 hover:text-white"
+        >
+          CNCF <span id="count-cncf" class="ml-1 text-[10px] font-mono text-gray-500">0</span>
+        </button>
+        <button
+          type="button"
+          data-source="STARTUP"
+          class="filter-source-btn rounded-md px-3 py-1 transition-colors text-gray-400 hover:text-white"
+        >
+          Startups <span id="count-startup" class="ml-1 text-[10px] font-mono text-gray-500">0</span>
+        </button>
+      </div>
+
+      <!-- Quick Filter Pills -->
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <span class="text-xs text-gray-500 font-mono mr-1 hidden sm:inline">Tags:</span>
+        <button
+          type="button"
+          data-tag="good first"
+          class="filter-tag-btn text-[11px] font-mono rounded-full px-2.5 py-0.5 border border-gray-700/60 bg-gray-800 text-gray-400 hover:border-pink-300/20 hover:text-pink-400 transition-colors"
+        >
+          good first issue
+        </button>
+        <button
+          type="button"
+          data-tag="help wanted"
+          class="filter-tag-btn text-[11px] font-mono rounded-full px-2.5 py-0.5 border border-gray-700/60 bg-gray-800 text-gray-400 hover:border-pink-300/20 hover:text-pink-400 transition-colors"
+        >
+          help wanted
+        </button>
+        <button
+          type="button"
+          data-tag="bug"
+          class="filter-tag-btn text-[11px] font-mono rounded-full px-2.5 py-0.5 border border-gray-700/60 bg-gray-800 text-gray-400 hover:border-pink-300/20 hover:text-pink-400 transition-colors"
+        >
+          bug
+        </button>
+        <button
+          type="button"
+          data-tag="enhancement"
+          class="filter-tag-btn text-[11px] font-mono rounded-full px-2.5 py-0.5 border border-gray-700/60 bg-gray-800 text-gray-400 hover:border-pink-300/20 hover:text-pink-400 transition-colors"
+        >
+          enhancement
+        </button>
+        <button
+          type="button"
+          data-tag="Go"
+          class="filter-tag-btn text-[11px] font-mono rounded-full px-2.5 py-0.5 border border-gray-700/60 bg-gray-800 text-gray-400 hover:border-pink-300/20 hover:text-pink-400 transition-colors"
+        >
+          Go
+        </button>
+        <button
+          type="button"
+          data-tag="Python"
+          class="filter-tag-btn text-[11px] font-mono rounded-full px-2.5 py-0.5 border border-gray-700/60 bg-gray-800 text-gray-400 hover:border-pink-300/20 hover:text-pink-400 transition-colors"
+        >
+          Python
+        </button>
+        <button
+          type="button"
+          data-tag="TypeScript"
+          class="filter-tag-btn text-[11px] font-mono rounded-full px-2.5 py-0.5 border border-gray-700/60 bg-gray-800 text-gray-400 hover:border-pink-300/20 hover:text-pink-400 transition-colors"
+        >
+          TypeScript
+        </button>
+      </div>
+    </div>
+
+    <!-- Active State & Status Summary -->
+    <div class="flex items-center justify-between text-xs text-gray-400">
+      <div class="flex items-center gap-2">
+        <span>Showing <strong id="visible-count" class="text-white font-mono">0</strong> issues</span>
+        <span class="text-gray-600">•</span>
+        <span id="active-filter-label" class="text-gray-500">All sources</span>
+      </div>
+      <div class="text-[11px] text-gray-500 font-mono">
+        Last updated: <span class="text-gray-400">{last_updated}</span>
+      </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <!-- Generated via JavaScript -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden py-16 text-center">
+      <div class="inline-flex rounded-full border border-pink-300/10 bg-pink-400/10 p-3 mb-3">
+        <svg class="size-6 stroke-pink-500 fill-none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <h3 class="text-sm font-semibold text-white tracking-tight mb-1">No matching issues found</h3>
+      <p class="text-xs text-gray-400 max-w-sm mx-auto mb-4 tracking-tight">Try clearing your search query or selecting a different source/tag filter.</p>
+      <button
+        id="reset-filters"
+        type="button"
+        class="inline-flex items-center text-xs font-mono font-medium text-pink-400 border border-pink-300/20 bg-pink-400/10 px-3 py-1.5 rounded-lg hover:bg-pink-400/20 transition-colors"
+      >
+        Reset filters
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-800/80 bg-[#0b0f17] py-6 mt-12 text-xs text-gray-500">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p class="tracking-tight">
+        Automatically aggregated from CNCF Clotributor &amp; GitHub GraphQL / Search APIs.
+      </p>
+      <p class="font-mono text-[11px]">
+        Updated automatically via GitHub Actions
+      </p>
+    </div>
+  </footer>
+
+  <!-- Raw Issues Data Injection -->
+  <script id="issues-data" type="application/json">
+{json_data}
+  </script>
+
+  <!-- Client-Side Engine -->
+  <script>
+    (function () {{
+      const rawDataElement = document.getElementById('issues-data');
+      let issues = [];
+      try {{
+        issues = JSON.parse(rawDataElement.textContent || '[]');
+      }} catch (e) {{
+        console.error('Failed to parse issues data:', e);
+      }}
+
+      // State
+      let currentSource = 'ALL';
+      let selectedTag = '';
+      let searchQuery = '';
+
+      // Elements
+      const container = document.getElementById('cards-container');
+      const emptyState = document.getElementById('empty-state');
+      const searchInput = document.getElementById('search-input');
+      const clearSearchBtn = document.getElementById('clear-search');
+      const resetFiltersBtn = document.getElementById('reset-filters');
+      const visibleCountEl = document.getElementById('visible-count');
+      const badgeTotalEl = document.getElementById('badge-total');
+      const countAllEl = document.getElementById('count-all');
+      const countCncfEl = document.getElementById('count-cncf');
+      const countStartupEl = document.getElementById('count-startup');
+      const activeFilterLabel = document.getElementById('active-filter-label');
+      const sourceButtons = document.querySelectorAll('.filter-source-btn');
+      const tagButtons = document.querySelectorAll('.filter-tag-btn');
+
+      // Initialize counters
+      const totalCount = issues.length;
+      const cncfCount = issues.filter(i => (i.source || '').toUpperCase() === 'CNCF').length;
+      const startupCount = issues.filter(i => (i.source || '').toUpperCase() === 'STARTUP').length;
+
+      badgeTotalEl.textContent = `${{totalCount}} Active`;
+      countAllEl.textContent = totalCount;
+      countCncfEl.textContent = cncfCount;
+      countStartupEl.textContent = startupCount;
+
+      function escapeHtml(str) {{
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }}
+
+      function renderCards(filteredIssues) {{
+        visibleCountEl.textContent = filteredIssues.length;
+
+        if (filteredIssues.length === 0) {{
+          container.innerHTML = '';
+          emptyState.classList.remove('hidden');
+          return;
+        }}
+
+        emptyState.classList.add('hidden');
+
+        const cardsHtml = filteredIssues.map(issue => {{
+          const isCncf = (issue.source || '').toUpperCase() === 'CNCF';
+          const sourceLabel = isCncf ? 'CNCF' : 'Startup';
+          const repo = issue.repo || '';
+          const repoUrl = issue.repo_url || `https://github.com/${{repo}}`;
+          const title = issue.title || '';
+          const number = issue.number || 0;
+          const url = issue.url || `https://github.com/${{repo}}/issues/${{number}}`;
+          const stack = issue.language || '';
+          const opened = issue.opened || '';
+          const comments = issue.comments !== undefined ? issue.comments : 0;
+          const labels = Array.isArray(issue.labels) ? issue.labels : [];
+
+          // Format labels (max 3, +N if more)
+          const displayedLabels = labels.slice(0, 3);
+          const extraLabelsCount = labels.length > 3 ? labels.length - 3 : 0;
+
+          const labelsHtml = displayedLabels.map(label => `
+            <span class="inline-block rounded bg-gray-900/70 border border-gray-700/50 px-1.5 py-0.5 text-[10px] text-gray-400 font-mono tracking-tight truncate max-w-[130px]">
+              ${{escapeHtml(label)}}
+            </span>
+          `).join('') + (extraLabelsCount > 0 ? `
+            <span class="inline-block rounded bg-gray-900/70 border border-gray-700/50 px-1 py-0.5 text-[10px] text-gray-500 font-mono">
+              +${{extraLabelsCount}}
+            </span>
+          ` : '');
+
+          return `
+            <div class="group flex flex-col justify-between rounded-lg bg-gray-800 p-4 shadow-sm outline outline-black/5 border border-gray-700/60 hover:border-pink-500/30 transition-all duration-150 gap-2.5">
+              
+              <!-- Top Row: Source badge, Repo name, Opened time -->
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="inline-flex shrink-0 items-center rounded-full border border-pink-300/10 bg-pink-400/10 px-2 py-0.5 text-[11px] font-medium text-pink-400 tracking-tight">
+                    <span class="size-1.5 rounded-full bg-pink-400 mr-1.5"></span>
+                    ${{sourceLabel}}
+                  </span>
+                  <a
+                    href="${{escapeHtml(repoUrl)}}"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="truncate font-mono text-xs text-gray-400 hover:text-white transition-colors tracking-tight"
+                    title="${{escapeHtml(repo)}}"
+                  >
+                    ${{escapeHtml(repo)}}
+                  </a>
+                </div>
+                <time class="shrink-0 text-[11px] text-gray-500 font-mono" title="Opened ${{escapeHtml(opened)}}">${{escapeHtml(opened)}}</time>
+              </div>
+
+              <!-- Issue Title & Link -->
+              <div class="my-0.5">
+                <a
+                  href="${{escapeHtml(url)}}"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="font-medium text-sm text-white group-hover:text-pink-400 transition-colors leading-snug tracking-tight line-clamp-2 block"
+                  title="${{escapeHtml(title)}}"
+                >
+                  <span class="text-gray-400 font-normal mr-1 font-mono text-xs">#${{number}}</span>${{escapeHtml(title)}}
+                </a>
+              </div>
+
+              <!-- Bottom Row: Labels, Language Stack, Comments -->
+              <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-700/40 text-xs mt-auto">
+                <div class="flex items-center gap-1 overflow-hidden flex-wrap max-h-6">
+                  ${{labelsHtml || '<span class="text-[10px] text-gray-600 font-mono">-</span>'}}
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0 text-gray-400 font-mono text-[11px]">
+                  ${{stack ? `<span class="text-gray-400">${{escapeHtml(stack)}}</span>` : ''}}
+                  <span class="inline-flex items-center gap-1 text-gray-500" title="${{comments}} comment${{comments === 1 ? '' : 's'}}">
+                    <svg class="size-3.5 stroke-gray-500 fill-none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+                    </svg>
+                    ${{comments > 0 ? comments : '-'}}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          `;
+        }}).join('');
+
+        container.innerHTML = cardsHtml;
+      }}
+
+      function applyFilters() {{
+        let filtered = issues;
+
+        // Source Filter
+        if (currentSource !== 'ALL') {{
+          filtered = filtered.filter(item => (item.source || '').toUpperCase() === currentSource.toUpperCase());
+        }}
+
+        // Tag Filter
+        if (selectedTag) {{
+          const tagNorm = selectedTag.toLowerCase().replace(/[-\\s]+/g, '');
+          filtered = filtered.filter(item => {{
+            const labelsMatch = Array.isArray(item.labels) && item.labels.some(l => {{
+              const lNorm = l.toLowerCase().replace(/[-\\s]+/g, '');
+              return lNorm.includes(tagNorm);
+            }});
+            const stackMatch = (item.language || '').toLowerCase().includes(selectedTag.toLowerCase());
+            return labelsMatch || stackMatch;
+          }});
+        }}
+
+        // Search Query Filter
+        if (searchQuery.trim()) {{
+          const q = searchQuery.toLowerCase().trim();
+          filtered = filtered.filter(item => {{
+            const titleMatch = (item.title || '').toLowerCase().includes(q);
+            const repoMatch = (item.repo || '').toLowerCase().includes(q);
+            const stackMatch = (item.language || '').toLowerCase().includes(q);
+            const numMatch = String(item.number || '').includes(q);
+            const labelsMatch = Array.isArray(item.labels) && item.labels.some(l => l.toLowerCase().includes(q));
+            return titleMatch || repoMatch || stackMatch || numMatch || labelsMatch;
+          }});
+        }}
+
+        // Update Label
+        let filterParts = [];
+        if (currentSource !== 'ALL') filterParts.push(currentSource === 'CNCF' ? 'CNCF' : 'Startups');
+        if (selectedTag) filterParts.push(`tag: "${{selectedTag}}"`);
+        if (searchQuery.trim()) filterParts.push(`search: "${{searchQuery.trim()}}"`);
+        activeFilterLabel.textContent = filterParts.length > 0 ? filterParts.join(' • ') : 'All sources';
+
+        renderCards(filtered);
+      }}
+
+      // Source Filter Clicks
+      sourceButtons.forEach(btn => {{
+        btn.addEventListener('click', () => {{
+          currentSource = (btn.dataset.source || 'ALL').toUpperCase();
+          sourceButtons.forEach(b => {{
+            b.classList.remove('text-white', 'bg-[#0b0f17]', 'shadow-sm', 'border', 'border-gray-700/40');
+            b.classList.add('text-gray-400');
+          }});
+          btn.classList.remove('text-gray-400');
+          btn.classList.add('text-white', 'bg-[#0b0f17]', 'shadow-sm', 'border', 'border-gray-700/40');
+          applyFilters();
+        }});
+      }});
+
+      // Tag Filter Clicks
+      tagButtons.forEach(btn => {{
+        btn.addEventListener('click', () => {{
+          const tag = btn.dataset.tag;
+          if (selectedTag === tag) {{
+            selectedTag = '';
+            btn.classList.remove('border-pink-300/40', 'text-pink-400', 'bg-pink-400/10');
+            btn.classList.add('border-gray-700/60', 'bg-gray-800', 'text-gray-400');
+          }} else {{
+            selectedTag = tag;
+            tagButtons.forEach(b => {{
+              b.classList.remove('border-pink-300/40', 'text-pink-400', 'bg-pink-400/10');
+              b.classList.add('border-gray-700/60', 'bg-gray-800', 'text-gray-400');
+            }});
+            btn.classList.remove('border-gray-700/60', 'bg-gray-800', 'text-gray-400');
+            btn.classList.add('border-pink-300/40', 'text-pink-400', 'bg-pink-400/10');
+          }}
+          applyFilters();
+        }});
+      }});
+
+      // Search Handling
+      searchInput.addEventListener('input', (e) => {{
+        searchQuery = e.target.value;
+        if (searchQuery.length > 0) {{
+          clearSearchBtn.classList.remove('hidden');
+        }} else {{
+          clearSearchBtn.classList.add('hidden');
+        }}
+        applyFilters();
+      }});
+
+      clearSearchBtn.addEventListener('click', () => {{
+        searchInput.value = '';
+        searchQuery = '';
+        clearSearchBtn.classList.add('hidden');
+        searchInput.focus();
+        applyFilters();
+      }});
+
+      resetFiltersBtn.addEventListener('click', () => {{
+        currentSource = 'ALL';
+        selectedTag = '';
+        searchQuery = '';
+        searchInput.value = '';
+        clearSearchBtn.classList.add('hidden');
+
+        sourceButtons.forEach(b => {{
+          if ((b.dataset.source || '').toUpperCase() === 'ALL') {{
+            b.classList.add('text-white', 'bg-[#0b0f17]', 'shadow-sm', 'border', 'border-gray-700/40');
+            b.classList.remove('text-gray-400');
+          }} else {{
+            b.classList.remove('text-white', 'bg-[#0b0f17]', 'shadow-sm', 'border', 'border-gray-700/40');
+            b.classList.add('text-gray-400');
+          }}
+        }});
+
+        tagButtons.forEach(b => {{
+          b.classList.remove('border-pink-300/40', 'text-pink-400', 'bg-pink-400/10');
+          b.classList.add('border-gray-700/60', 'bg-gray-800', 'text-gray-400');
+        }});
+
+        applyFilters();
+      }});
+
+      // Initial Render
+      applyFilters();
+    }})();
+  </script>
+</body>
+</html>
+"""

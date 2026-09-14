@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 import requests
 
 logger = logging.getLogger("cncf_tracker")
@@ -20,7 +20,7 @@ class ClotributorClient:
 
     def fetch_recent_issues(
         self,
-        days_back: int = 7,
+        days_back: Union[int, float] = 7,
         require_no_linked_prs: bool = True,
         max_pages: int = 3,
     ) -> List[Dict[str, Any]]:

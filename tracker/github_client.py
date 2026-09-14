@@ -2,7 +2,7 @@ import os
 import time
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 import requests
 
 logger = logging.getLogger("cncf_tracker")
@@ -99,7 +99,7 @@ class GitHubClient:
     def fetch_startup_issues(
         self,
         startup_projects: List[Dict[str, Any]],
-        days_back: int = 7,
+        days_back: Union[int, float] = 7,
         min_comments: int = 1,
         max_comments: int = 6,
         require_unassigned: bool = True,
@@ -128,8 +128,13 @@ class GitHubClient:
         assignee_filter = "no:assignee " if require_unassigned else ""
         comments_filter = f"comments:{min_comments}..{max_comments} "
 
+        window_display = (
+            f"{int(days_back * 24)}h"
+            if (isinstance(days_back, float) and not days_back.is_integer()) or days_back < 1
+            else f"{int(days_back)}d"
+        )
         logger.info(
-            f"Querying {len(all_repos)} YC/OSS startups (past {days_back}d, {min_comments}-{max_comments} comments, unassigned)..."
+            f"Querying {len(all_repos)} YC/OSS startups (past {window_display}, {min_comments}-{max_comments} comments, unassigned)..."
         )
 
         for i in range(0, len(all_repos), batch_size):
@@ -200,7 +205,7 @@ class GitHubClient:
         self,
         cncf_projects: List[Dict[str, Any]],
         target_labels: List[str],
-        days_back: int = 7,
+        days_back: Union[int, float] = 7,
         batch_size: int = 6,
     ) -> List[Dict[str, Any]]:
         """Fetches newcomer & mentorship issues from CNCF repos via GitHub API."""

@@ -49,6 +49,12 @@ def main():
         help="Lookback window in days (overrides config days_back)",
     )
     parser.add_argument(
+        "--hours",
+        type=int,
+        default=None,
+        help="Lookback window in hours (overrides --days and config days_back)",
+    )
+    parser.add_argument(
         "--token",
         type=str,
         default=None,
@@ -58,6 +64,18 @@ def main():
         "--update-readme",
         action="store_true",
         help="Update root README.md with latest issues table",
+    )
+    parser.add_argument(
+        "--update-html",
+        action="store_true",
+        default=True,
+        help="Update root index.html with interactive issue dashboard (default: True)",
+    )
+    parser.add_argument(
+        "--no-html",
+        dest="update_html",
+        action="store_false",
+        help="Do not update index.html",
     )
     parser.add_argument(
         "--save-report",
@@ -103,7 +121,16 @@ def main():
     startup_projects = config.get("startup_projects", [])
     target_labels = config.get("target_labels", [])
 
-    days_back = args.days or settings.get("days_back", 7)
+    if args.hours is not None:
+        hours_back = args.hours
+        days_back = args.hours / 24.0
+    elif args.days is not None:
+        hours_back = int(args.days * 24)
+        days_back = float(args.days)
+    else:
+        cfg_days = settings.get("days_back", 7)
+        days_back = float(cfg_days)
+        hours_back = int(cfg_days * 24)
     min_comments = settings.get("min_comments", 1)
     max_comments = settings.get("max_comments", 6)
     require_unassigned = settings.get("require_unassigned", True)
@@ -161,7 +188,7 @@ def main():
     logger.info(f"Total deduplicated issues found across all sources: {len(all_issues)}")
 
     # Initialize Renderer
-    renderer = MarkdownRenderer(issues=all_issues, days_back=days_back)
+    renderer = MarkdownRenderer(issues=all_issues, days_back=days_back, hours=args.hours)
 
     if args.dry_run:
         print("\n" + "=" * 60)
@@ -196,10 +223,18 @@ def main():
         else:
             logger.warning(f"{readme_path} not found. Skipped updating README.")
 
+    # Update index.html
+    if args.update_html:
+        html_path = os.path.join(project_root, "index.html")
+        if renderer.update_html(html_path):
+            logger.info(f"Updated interactive HTML dashboard in {html_path}")
+        else:
+            logger.warning(f"Failed to update {html_path}")
+
     # Send notifications
     if args.notify:
         notifier = Notifier()
-        notifier.notify(issues=all_issues, hours=days_back * 24)
+        notifier.notify(issues=all_issues, hours=hours_back)
 
     logger.info(f"Completed! Processed {len(all_issues)} issues.")
 
