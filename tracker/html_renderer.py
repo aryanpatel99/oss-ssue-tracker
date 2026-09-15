@@ -30,6 +30,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CNCF &amp; Open Source Startup Issue Tracker</title>
   <meta name="description" content="Tracks CNCF projects and high-growth YC open-source startups for open issues with active discussions, unassigned status, and no open pull requests.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   
   <!-- Fonts: Geist, Geist Mono, and Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
