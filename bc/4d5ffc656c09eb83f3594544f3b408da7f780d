@@ -1,0 +1,34 @@
+.agents/skills/better-ui/SKILL.md
+  h_ccbfe03d15f891 1-112
+.agents/skills/better-ui/agents/openai.yaml
+  h_ccbfe03d15f891 1-3
+.agents/skills/better-ui/animations.md
+  h_ccbfe03d15f891 1-205
+.agents/skills/better-ui/enter-exit.md
+  h_ccbfe03d15f891 1-147
+.agents/skills/better-ui/icon-transitions.md
+  h_ccbfe03d15f891 1-102
+.agents/skills/better-ui/icons.md
+  h_ccbfe03d15f891 1-110
+.agents/skills/better-ui/performance.md
+  h_ccbfe03d15f891 1-88
+.agents/skills/better-ui/surfaces.md
+  h_ccbfe03d15f891 1-219
+index.html
+  h_ccbfe03d15f891 67,71-93,100-101,105-106,118,129,138,140,147,159-160,162-163,167,169,174,176,181,183,187,193,200,207,214,221,228,235,245,247,249,260-262,273,282,287,360,372-376,383,387,392-396,398-401,403,406-407,410-421,423,432,435,440,445,447-448,512,516,527-528,532-533,535-536,570,573,579-580
+skills-lock.json
+  h_ccbfe03d15f891 1-11
+tracker/html_renderer.py
+  h_ccbfe03d15f891 3-11,92,96-118,125-126,130-131,143,154,163,165,172,184-185,187-188,192,194,199,201,206,208,212,218,225,232,239,246,253,260,270,272,274,285-287,298,307,312,385,397-401,408,412,417-421,423-426,428,431-432,435-446,448,457,460,465,470,472-473,537,541,552-553,557-558,560-561,595,598,604-605
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bc4d5ffc656c09eb83f3594544f3b408da7f780d",
+  "prompts": {},
+  "humans": {
+    "h_ccbfe03d15f891": {
+      "author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
