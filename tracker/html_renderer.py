@@ -28,8 +28,8 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CNCF &amp; Open Source Startup Issue Tracker</title>
-  <meta name="description" content="Tracks CNCF projects and high-growth YC open-source startups for open issues with active discussions, unassigned status, and no open pull requests.">
+  <title>CNCF, ASWF &amp; Open Source Startup Issue Tracker</title>
+  <meta name="description" content="Tracks CNCF, ASWF (Academy Software Foundation), and high-growth YC open-source startups for open issues with active discussions, unassigned status, and no open pull requests.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   
   <!-- Fonts: Geist, Geist Mono, and Inter -->
@@ -140,7 +140,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
         </span>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base font-semibold text-white tracking-tight">CNCF &amp; OSS Issue Tracker</h1>
+            <h1 class="text-base font-semibold text-white tracking-tight">CNCF, ASWF &amp; OSS Issue Tracker</h1>
             <span id="badge-total" class="inline-flex items-center rounded-full border border-pink-500/20 bg-pink-500/10 px-2 py-0.5 text-[10px] font-medium text-pink-400 font-mono tabular-nums">
               0 Active
             </span>
@@ -197,9 +197,16 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
         <button
           type="button"
           data-source="CNCF"
-          class="filter-source-btn rounded-lg px-3 py-1 transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] text-gray-400 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-400/50"
+          class="filter-source-btn rounded-lg px-3 py-1 transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] text-gray-400 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-400/50"
         >
           CNCF <span id="count-cncf" class="ml-1 text-[10px] font-mono tabular-nums text-gray-500">0</span>
+        </button>
+        <button
+          type="button"
+          data-source="ASWF"
+          class="filter-source-btn rounded-lg px-3 py-1 transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] text-gray-400 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/50"
+        >
+          ASWF <span id="count-aswf" class="ml-1 text-[10px] font-mono tabular-nums text-gray-500">0</span>
         </button>
         <button
           type="button"
@@ -247,6 +254,13 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
           class="filter-tag-btn text-[11px] font-mono rounded-full px-2.5 py-0.5 border border-white/[0.08] bg-white/[0.03] text-gray-400 hover:text-gray-200 hover:border-white/[0.15] hover:bg-white/[0.06] transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/50"
         >
           Go
+        </button>
+        <button
+          type="button"
+          data-tag="C++"
+          class="filter-tag-btn text-[11px] font-mono rounded-full px-2.5 py-0.5 border border-white/[0.08] bg-white/[0.03] text-gray-400 hover:text-gray-200 hover:border-white/[0.15] hover:bg-white/[0.06] transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/50"
+        >
+          C++
         </button>
         <button
           type="button"
@@ -308,7 +322,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
   <footer class="border-t border-white/[0.08] bg-[#0b0f17] py-6 mt-12 text-xs text-gray-500">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
       <p class="tracking-tight">
-        Automatically aggregated from CNCF Clotributor &amp; GitHub GraphQL / Search APIs.
+        Automatically aggregated from CNCF &amp; ASWF Clotributor &amp; GitHub GraphQL / Search APIs.
       </p>
       <p class="font-mono text-[11px] text-gray-400">
         Updated automatically via GitHub Actions
@@ -347,6 +361,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
       const badgeTotalEl = document.getElementById('badge-total');
       const countAllEl = document.getElementById('count-all');
       const countCncfEl = document.getElementById('count-cncf');
+      const countAsfwEl = document.getElementById('count-aswf');
       const countStartupEl = document.getElementById('count-startup');
       const activeFilterLabel = document.getElementById('active-filter-label');
       const sourceButtons = document.querySelectorAll('.filter-source-btn');
@@ -355,11 +370,13 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
       // Initialize counters
       const totalCount = issues.length;
       const cncfCount = issues.filter(i => (i.source || '').toUpperCase() === 'CNCF').length;
+      const aswfCount = issues.filter(i => (i.source || '').toUpperCase() === 'ASWF').length;
       const startupCount = issues.filter(i => (i.source || '').toUpperCase() === 'STARTUP').length;
 
       badgeTotalEl.textContent = `${{totalCount}} Active`;
       countAllEl.textContent = totalCount;
       countCncfEl.textContent = cncfCount;
+      if (countAsfwEl) countAsfwEl.textContent = aswfCount;
       countStartupEl.textContent = startupCount;
 
       function escapeHtml(str) {{
@@ -384,8 +401,32 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
         emptyState.classList.add('hidden');
 
         const cardsHtml = filteredIssues.map((issue, index) => {{
-          const isCncf = (issue.source || '').toUpperCase() === 'CNCF';
-          const sourceLabel = isCncf ? 'CNCF' : 'Startup';
+          const srcUpper = (issue.source || '').toUpperCase();
+          const isCncf = srcUpper === 'CNCF';
+          const isAswf = srcUpper === 'ASWF';
+          let sourceLabel = 'Startup';
+          let badgeClasses = 'border-pink-400/20 bg-pink-500/10 text-pink-300';
+          let dotClasses = 'bg-pink-400';
+          let cardHoverBorder = 'hover:border-pink-500/30';
+          let cardHoverGlow = 'hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4),0_0_0_1px_rgba(236,72,153,0.15)]';
+          let titleHover = 'group-hover:text-pink-300';
+
+          if (isCncf) {{
+            sourceLabel = 'CNCF';
+            badgeClasses = 'border-sky-400/20 bg-sky-500/10 text-sky-300';
+            dotClasses = 'bg-sky-400';
+            cardHoverBorder = 'hover:border-sky-500/30';
+            cardHoverGlow = 'hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4),0_0_0_1px_rgba(56,189,248,0.15)]';
+            titleHover = 'group-hover:text-sky-300';
+          }} else if (isAswf) {{
+            sourceLabel = 'ASWF';
+            badgeClasses = 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300';
+            dotClasses = 'bg-emerald-400';
+            cardHoverBorder = 'hover:border-emerald-500/30';
+            cardHoverGlow = 'hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4),0_0_0_1px_rgba(52,211,153,0.15)]';
+            titleHover = 'group-hover:text-emerald-300';
+          }}
+
           const repo = issue.repo || '';
           const repoUrl = issue.repo_url || `https://github.com/${{repo}}`;
           const title = issue.title || '';
@@ -415,15 +456,10 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
             </span>
           ` : '');
 
-          const badgeClasses = isCncf
-            ? 'border-sky-400/20 bg-sky-500/10 text-sky-300'
-            : 'border-pink-400/20 bg-pink-500/10 text-pink-300';
-          const dotClasses = isCncf ? 'bg-sky-400' : 'bg-pink-400';
-
           return `
             <div
               style="--stagger-delay: ${{staggerDelay}}ms;"
-              class="group flex flex-col justify-between rounded-xl bg-[#111622]/90 hover:bg-[#141b2b] p-4 border border-white/[0.07] hover:border-pink-500/30 shadow-[0_2px_8px_rgba(0,0,0,0.25)] hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4),0_0_0_1px_rgba(236,72,153,0.15)] transition-[border-color,box-shadow,background-color,transform] duration-150 ease-out gap-3 card-enter"
+              class="group flex flex-col justify-between rounded-xl bg-[#111622]/90 hover:bg-[#141b2b] p-4 border border-white/[0.07] ${{cardHoverBorder}} shadow-[0_2px_8px_rgba(0,0,0,0.25)] ${{cardHoverGlow}} transition-[border-color,box-shadow,background-color,transform] duration-150 ease-out gap-3 card-enter"
             >
               
               <!-- Top Row: Source badge, Repo avatar & name, Opened time -->
@@ -455,7 +491,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
                   href="${{escapeHtml(url)}}"
                   target="_blank"
                   rel="noreferrer"
-                  class="font-medium text-sm text-gray-100 group-hover:text-pink-300 transition-colors duration-150 leading-snug tracking-tight line-clamp-2 block"
+                  class="font-medium text-sm text-gray-100 ${{titleHover}} transition-colors duration-150 leading-snug tracking-tight line-clamp-2 block"
                   title="${{escapeHtml(title)}}"
                 >
                   <span class="text-gray-400 font-normal mr-1 font-mono text-xs tabular-nums">#${{number}}</span>${{escapeHtml(title)}}
@@ -522,7 +558,10 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
 
         // Update Label
         let filterParts = [];
-        if (currentSource !== 'ALL') filterParts.push(currentSource === 'CNCF' ? 'CNCF' : 'Startups');
+        if (currentSource !== 'ALL') {{
+          const srcLabels = {{ 'CNCF': 'CNCF', 'ASWF': 'ASWF', 'STARTUP': 'Startups' }};
+          filterParts.push(srcLabels[currentSource] || currentSource);
+        }}
         if (selectedTag) filterParts.push(`tag: "${{selectedTag}}"`);
         if (searchQuery.trim()) filterParts.push(`search: "${{searchQuery.trim()}}"`);
         activeFilterLabel.textContent = filterParts.length > 0 ? filterParts.join(' • ') : 'All sources';

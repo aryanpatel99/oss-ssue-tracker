@@ -1,4 +1,4 @@
-# CNCF & YC Open Source Startup Issue Tracker Configuration
+# CNCF, ASWF & YC Open Source Startup Issue Tracker Configuration
 
 settings:
   days_back: 7                  # Look back window in days (3-7 days)
@@ -7,6 +7,11 @@ settings:
   require_unassigned: true      # Exclude issues that are already claimed
   require_no_linked_prs: true   # Exclude issues where someone has opened a PR
   github_search_batch_size: 5   # Repos per GitHub search query
+  foundations:                  # Foundations to query via Clotributor
+    - id: "cncf"
+      name: "CNCF"
+    - id: "aswf"
+      name: "ASWF"
 
 target_labels:
   - "good first issue"
@@ -93,6 +98,31 @@ cncf_projects:
   - repo: "meshery/meshery"
     language: "Go"
   - repo: "cncf/mentoring"
+    language: "Markdown"
+
+# ASWF (Academy Software Foundation) Projects
+aswf_projects:
+  - repo: "AcademySoftwareFoundation/OpenTimelineIO"
+    language: "C++/Python"
+  - repo: "AcademySoftwareFoundation/MaterialX"
+    language: "C++/Python"
+  - repo: "AcademySoftwareFoundation/OpenImageIO"
+    language: "C++"
+  - repo: "AcademySoftwareFoundation/OpenColorIO"
+    language: "C++"
+  - repo: "AcademySoftwareFoundation/OpenVDB"
+    language: "C++"
+  - repo: "AcademySoftwareFoundation/openmoonray"
+    language: "C++"
+  - repo: "AcademySoftwareFoundation/OpenAssetIO"
+    language: "C++/Python"
+  - repo: "AcademySoftwareFoundation/Imath"
+    language: "C++"
+  - repo: "AcademySoftwareFoundation/rez"
+    language: "Python"
+  - repo: "AcademySoftwareFoundation/dna"
+    language: "Python/TypeScript"
+  - repo: "AcademySoftwareFoundation/tac"
     language: "Markdown"
 
 # YC & Emerging Open-Source Startups

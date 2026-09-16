@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-CNCF & YC Startup Issue Tracker
-Scans CNCF projects and high-growth YC open-source startups for open issues
+CNCF, ASWF & YC Startup Issue Tracker
+Scans CNCF, ASWF, and high-growth YC open-source startups for open issues
 with active discussions, unassigned status, and no linked pull requests.
 """
 
@@ -35,7 +35,7 @@ def load_config(config_path: str) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Tracks CNCF and YC open source startup issues with active discussions and no PRs."
+        description="Tracks CNCF, ASWF, and YC open source startup issues with active discussions and no PRs."
     )
     parser.add_argument(
         "--config",
@@ -117,7 +117,12 @@ def main():
     # Load configuration
     config = load_config(config_path)
     settings = config.get("settings", {})
+    foundations = settings.get("foundations", [
+        {"id": "cncf", "name": "CNCF"},
+        {"id": "aswf", "name": "ASWF"},
+    ])
     cncf_projects = config.get("cncf_projects", [])
+    aswf_projects = config.get("aswf_projects", [])
     startup_projects = config.get("startup_projects", [])
     target_labels = config.get("target_labels", [])
 
@@ -140,18 +145,22 @@ def main():
     all_issues = []
     seen_urls = set()
 
-    # 1. Fetch CNCF issues from Clotributor (verified has_linked_prs: false)
-    logger.info("Fetching CNCF issues from Clotributor API (no linked PRs)...")
+    # 1. Fetch Foundation issues from Clotributor (verified has_linked_prs: false)
     clotributor = ClotributorClient()
-    clotributor_issues = clotributor.fetch_recent_issues(
-        days_back=days_back,
-        require_no_linked_prs=require_no_linked_prs,
-    )
-    for iss in clotributor_issues:
-        url = iss.get("url")
-        if url and url not in seen_urls:
-            seen_urls.add(url)
-            all_issues.append(iss)
+    for f in foundations:
+        f_id = f.get("id") if isinstance(f, dict) else str(f)
+        f_name = f.get("name", f_id.upper()) if isinstance(f, dict) else f_id.upper()
+        logger.info(f"Fetching {f_name} issues from Clotributor API (no linked PRs)...")
+        foundation_issues = clotributor.fetch_recent_issues(
+            foundation=f_id,
+            days_back=days_back,
+            require_no_linked_prs=require_no_linked_prs,
+        )
+        for iss in foundation_issues:
+            url = iss.get("url")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                all_issues.append(iss)
 
     # 2. Fetch YC & Emerging Startup issues from GitHub API
     logger.info("Fetching YC & Emerging Open-Source Startup issues from GitHub...")
@@ -172,18 +181,34 @@ def main():
             all_issues.append(iss)
 
     # 3. Supplement with direct CNCF GitHub search
-    logger.info("Checking direct CNCF repositories on GitHub...")
-    cncf_gh_issues = github_client.fetch_cncf_issues(
-        cncf_projects=cncf_projects,
-        target_labels=target_labels,
-        days_back=days_back,
-        batch_size=batch_size,
-    )
-    for iss in cncf_gh_issues:
-        url = iss.get("url")
-        if url and url not in seen_urls:
-            seen_urls.add(url)
-            all_issues.append(iss)
+    if cncf_projects:
+        logger.info("Checking direct CNCF repositories on GitHub...")
+        cncf_gh_issues = github_client.fetch_cncf_issues(
+            cncf_projects=cncf_projects,
+            target_labels=target_labels,
+            days_back=days_back,
+            batch_size=batch_size,
+        )
+        for iss in cncf_gh_issues:
+            url = iss.get("url")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                all_issues.append(iss)
+
+    # 4. Supplement with direct ASWF GitHub search
+    if aswf_projects:
+        logger.info("Checking direct ASWF repositories on GitHub...")
+        aswf_gh_issues = github_client.fetch_aswf_issues(
+            aswf_projects=aswf_projects,
+            target_labels=target_labels,
+            days_back=days_back,
+            batch_size=batch_size,
+        )
+        for iss in aswf_gh_issues:
+            url = iss.get("url")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                all_issues.append(iss)
 
     logger.info(f"Total deduplicated issues found across all sources: {len(all_issues)}")
 

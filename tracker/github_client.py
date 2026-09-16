@@ -201,26 +201,28 @@ class GitHubClient:
         logger.info(f"Found {len(collected)} qualifying YC/startup issues with active discussions.")
         return collected
 
-    def fetch_cncf_issues(
+    def fetch_foundation_issues(
         self,
-        cncf_projects: List[Dict[str, Any]],
+        projects: List[Dict[str, Any]],
         target_labels: List[str],
+        source: str = "CNCF",
+        default_language: str = "Go",
         days_back: Union[int, float] = 7,
         batch_size: int = 6,
     ) -> List[Dict[str, Any]]:
-        """Fetches newcomer & mentorship issues from CNCF repos via GitHub API."""
+        """Fetches newcomer & mentorship issues from foundation repos (CNCF, ASWF, etc.) via GitHub API."""
         since_time = datetime.now(timezone.utc) - timedelta(days=days_back)
         since_iso = since_time.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         repo_metadata = {
             p["repo"].lower(): {
                 "repo": p["repo"],
-                "language": p.get("language", "Go"),
+                "language": p.get("language", default_language),
             }
-            for p in cncf_projects
+            for p in projects
         }
 
-        all_repos = [p["repo"] for p in cncf_projects]
+        all_repos = [p["repo"] for p in projects]
         collected = []
         seen_urls = set()
 
@@ -253,18 +255,18 @@ class GitHubClient:
                 parts = html_url.split("/")
                 full_repo = f"{parts[3]}/{parts[4]}" if len(parts) >= 5 else ""
 
-                if full_repo.lower() == "cncf/mentoring":
+                if full_repo.lower() in ("cncf/mentoring", "academysoftwarefoundation/tac"):
                     is_match = True
 
                 if is_match:
                     seen_urls.add(html_url)
                     meta = repo_metadata.get(
                         full_repo.lower(),
-                        {"repo": full_repo, "language": "Go"},
+                        {"repo": full_repo, "language": default_language},
                     )
                     collected.append({
                         "id": item["id"],
-                        "source": "CNCF",
+                        "source": source,
                         "company": full_repo,
                         "repo": full_repo,
                         "number": item.get("number"),
@@ -279,3 +281,37 @@ class GitHubClient:
             time.sleep(1.5)
 
         return collected
+
+    def fetch_cncf_issues(
+        self,
+        cncf_projects: List[Dict[str, Any]],
+        target_labels: List[str],
+        days_back: Union[int, float] = 7,
+        batch_size: int = 6,
+    ) -> List[Dict[str, Any]]:
+        """Fetches newcomer & mentorship issues from CNCF repos via GitHub API."""
+        return self.fetch_foundation_issues(
+            projects=cncf_projects,
+            target_labels=target_labels,
+            source="CNCF",
+            default_language="Go",
+            days_back=days_back,
+            batch_size=batch_size,
+        )
+
+    def fetch_aswf_issues(
+        self,
+        aswf_projects: List[Dict[str, Any]],
+        target_labels: List[str],
+        days_back: Union[int, float] = 7,
+        batch_size: int = 6,
+    ) -> List[Dict[str, Any]]:
+        """Fetches newcomer & mentorship issues from ASWF repos via GitHub API."""
+        return self.fetch_foundation_issues(
+            projects=aswf_projects,
+            target_labels=target_labels,
+            source="ASWF",
+            default_language="C++",
+            days_back=days_back,
+            batch_size=batch_size,
+        )

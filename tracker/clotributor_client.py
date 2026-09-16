@@ -20,14 +20,19 @@ class ClotributorClient:
 
     def fetch_recent_issues(
         self,
+        foundation: str = "cncf",
         days_back: Union[int, float] = 7,
         require_no_linked_prs: bool = True,
         max_pages: int = 3,
     ) -> List[Dict[str, Any]]:
         """
-        Fetches newcomer CNCF issues from Clotributor.
+        Fetches newcomer issues from Clotributor for a given foundation ('cncf', 'aswf', etc.).
         Guarantees has_linked_prs == False when require_no_linked_prs is True.
         """
+        foundation_key = foundation.lower()
+        foundation_source = foundation.upper()
+        default_lang = "C++" if foundation_key == "aswf" else "Go"
+
         since_time = datetime.now(timezone.utc) - timedelta(days=days_back)
         since_timestamp = int(since_time.timestamp())
 
@@ -37,7 +42,7 @@ class ClotributorClient:
         for page in range(1, max_pages + 1):
             url = f"{self.BASE_URL}/issues/search"
             params = {
-                "foundation": "cncf",
+                "foundation": foundation_key,
                 "page": page,
                 "limit": 50,
             }
@@ -70,7 +75,7 @@ class ClotributorClient:
                     # Extract language
                     repo_info = item.get("repository", {})
                     languages = repo_info.get("languages", [])
-                    primary_lang = languages[0] if languages else "Go"
+                    primary_lang = languages[0] if languages else default_lang
 
                     # Convert timestamp to ISO string
                     created_iso = ""
@@ -85,8 +90,8 @@ class ClotributorClient:
                     full_repo = f"{parts[3]}/{parts[4]}" if len(parts) >= 5 else repo_name
 
                     results.append({
-                        "id": f"clotributor_{item.get('number')}_{full_repo}",
-                        "source": "CNCF",
+                        "id": f"clotributor_{foundation_key}_{item.get('number')}_{full_repo}",
+                        "source": foundation_source,
                         "repo": full_repo,
                         "number": item.get("number"),
                         "title": item.get("title", ""),
@@ -101,5 +106,7 @@ class ClotributorClient:
                 logger.error(f"Failed to fetch from Clotributor: {e}")
                 break
 
-        logger.info(f"Clotributor returned {len(results)} qualifying CNCF issues (no PRs linked).")
+        logger.info(
+            f"Clotributor returned {len(results)} qualifying {foundation_source} issues (no PRs linked)."
+        )
         return results
