@@ -1,0 +1,20 @@
+.github/workflows/daily_tracker.yml
+  h_ccbfe03d15f891 41
+config.yaml
+  h_ccbfe03d15f891 4-8
+main.py
+  h_ccbfe03d15f891 12,38-60,155-158,173-174,177,187,191,206,210,221,225,246,250
+tests/test_source_retention.py
+  h_ccbfe03d15f891 1-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e0e49d5e3e03f64b289d782b1fb3913f04feb66a",
+  "prompts": {},
+  "humans": {
+    "h_ccbfe03d15f891": {
+      "author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
