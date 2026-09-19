@@ -315,3 +315,21 @@ class GitHubClient:
             days_back=days_back,
             batch_size=batch_size,
         )
+
+    def fetch_lfx_issues(
+        self,
+        lfx_projects: List[Dict[str, Any]],
+        target_labels: List[str],
+        days_back: Union[int, float] = 7,
+        batch_size: int = 6,
+    ) -> List[Dict[str, Any]]:
+        """Fetches newcomer & mentorship issues from LFX repos via GitHub API."""
+        return self.fetch_foundation_issues(
+            projects=lfx_projects,
+            target_labels=target_labels,
+            source="LFX",
+            default_language="Go",
+            days_back=days_back,
+            batch_size=batch_size,
+        )
+
