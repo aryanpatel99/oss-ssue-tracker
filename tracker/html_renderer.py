@@ -210,6 +210,13 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
         </button>
         <button
           type="button"
+          data-source="LFX"
+          class="filter-source-btn rounded-lg px-3 py-1 transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] text-gray-400 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-400/50"
+        >
+          LFX <span id="count-lfx" class="ml-1 text-[10px] font-mono tabular-nums text-gray-500">0</span>
+        </button>
+        <button
+          type="button"
           data-source="STARTUP"
           class="filter-source-btn rounded-lg px-3 py-1 transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] text-gray-400 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-400/50"
         >
@@ -362,6 +369,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
       const countAllEl = document.getElementById('count-all');
       const countCncfEl = document.getElementById('count-cncf');
       const countAsfwEl = document.getElementById('count-aswf');
+      const countLfxEl = document.getElementById('count-lfx');
       const countStartupEl = document.getElementById('count-startup');
       const activeFilterLabel = document.getElementById('active-filter-label');
       const sourceButtons = document.querySelectorAll('.filter-source-btn');
@@ -371,12 +379,14 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
       const totalCount = issues.length;
       const cncfCount = issues.filter(i => (i.source || '').toUpperCase() === 'CNCF').length;
       const aswfCount = issues.filter(i => (i.source || '').toUpperCase() === 'ASWF').length;
+      const lfxCount = issues.filter(i => (i.source || '').toUpperCase() === 'LFX').length;
       const startupCount = issues.filter(i => (i.source || '').toUpperCase() === 'STARTUP').length;
 
       badgeTotalEl.textContent = `${{totalCount}} Active`;
       countAllEl.textContent = totalCount;
       countCncfEl.textContent = cncfCount;
       if (countAsfwEl) countAsfwEl.textContent = aswfCount;
+      if (countLfxEl) countLfxEl.textContent = lfxCount;
       countStartupEl.textContent = startupCount;
 
       function escapeHtml(str) {{
@@ -404,6 +414,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
           const srcUpper = (issue.source || '').toUpperCase();
           const isCncf = srcUpper === 'CNCF';
           const isAswf = srcUpper === 'ASWF';
+          const isLfx = srcUpper === 'LFX';
           let sourceLabel = 'Startup';
           let badgeClasses = 'border-pink-400/20 bg-pink-500/10 text-pink-300';
           let dotClasses = 'bg-pink-400';
@@ -425,6 +436,13 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
             cardHoverBorder = 'hover:border-emerald-500/30';
             cardHoverGlow = 'hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4),0_0_0_1px_rgba(52,211,153,0.15)]';
             titleHover = 'group-hover:text-emerald-300';
+          }} else if (isLfx) {{
+            sourceLabel = 'LFX';
+            badgeClasses = 'border-purple-400/20 bg-purple-500/10 text-purple-300';
+            dotClasses = 'bg-purple-400';
+            cardHoverBorder = 'hover:border-purple-500/30';
+            cardHoverGlow = 'hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4),0_0_0_1px_rgba(168,85,247,0.15)]';
+            titleHover = 'group-hover:text-purple-300';
           }}
 
           const repo = issue.repo || '';
@@ -559,7 +577,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
         // Update Label
         let filterParts = [];
         if (currentSource !== 'ALL') {{
-          const srcLabels = {{ 'CNCF': 'CNCF', 'ASWF': 'ASWF', 'STARTUP': 'Startups' }};
+          const srcLabels = {{ 'CNCF': 'CNCF', 'ASWF': 'ASWF', 'LFX': 'LFX', 'STARTUP': 'Startups' }};
           filterParts.push(srcLabels[currentSource] || currentSource);
         }}
         if (selectedTag) filterParts.push(`tag: "${{selectedTag}}"`);
