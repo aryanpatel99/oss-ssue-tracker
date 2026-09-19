@@ -1,7 +1,11 @@
 # CNCF, ASWF & YC Open Source Startup Issue Tracker Configuration
 
 settings:
-  days_back: 7                  # Look back window in days (3-7 days)
+  days_back: 7                  # Default look back window fallback
+  cncf_days_back: 14            # Keep CNCF issues for 2 weeks
+  aswf_days_back: 14            # Keep ASWF issues for 2 weeks
+  lfx_days_back: 30             # Keep LFX mentorship issues for 30 days
+  startup_days_back: 7          # Keep startup issues for 1 week
   min_comments: 1               # Active discussion threshold (minimum 1 comment)
   max_comments: 6               # Keep upper bound so issue is not already overrun
   require_unassigned: true      # Exclude issues that are already claimed

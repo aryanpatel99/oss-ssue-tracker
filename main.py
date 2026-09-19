@@ -9,6 +9,7 @@ import os
 import sys
 import argparse
 import logging
+from typing import Optional, Union, Dict, Any
 import yaml
 
 from tracker.github_client import GitHubClient
@@ -32,6 +33,29 @@ def load_config(config_path: str) -> dict:
         sys.exit(1)
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def resolve_source_days_back(
+    settings: dict,
+    override_days: Optional[Union[int, float]] = None,
+    override_hours: Optional[Union[int, float]] = None,
+) -> Dict[str, float]:
+    """Resolves tailored lookback window in days for each source."""
+    if override_hours is not None:
+        val = float(override_hours) / 24.0
+        return {"cncf": val, "aswf": val, "lfx": val, "startup": val, "default": val}
+    elif override_days is not None:
+        val = float(override_days)
+        return {"cncf": val, "aswf": val, "lfx": val, "startup": val, "default": val}
+    else:
+        default_days = float(settings.get("days_back", 7))
+        return {
+            "cncf": float(settings.get("cncf_days_back", 14)),
+            "aswf": float(settings.get("aswf_days_back", 14)),
+            "lfx": float(settings.get("lfx_days_back", 30)),
+            "startup": float(settings.get("startup_days_back", 7)),
+            "default": default_days,
+        }
 
 
 def main():
@@ -128,16 +152,10 @@ def main():
     startup_projects = config.get("startup_projects", [])
     target_labels = config.get("target_labels", [])
 
-    if args.hours is not None:
-        hours_back = args.hours
-        days_back = args.hours / 24.0
-    elif args.days is not None:
-        hours_back = int(args.days * 24)
-        days_back = float(args.days)
-    else:
-        cfg_days = settings.get("days_back", 7)
-        days_back = float(cfg_days)
-        hours_back = int(cfg_days * 24)
+    source_days = resolve_source_days_back(settings, override_days=args.days, override_hours=args.hours)
+    days_back = source_days["default"]
+    hours_back = args.hours if args.hours is not None else int(days_back * 24)
+
     min_comments = settings.get("min_comments", 1)
     max_comments = settings.get("max_comments", 6)
     require_unassigned = settings.get("require_unassigned", True)
@@ -152,10 +170,11 @@ def main():
     for f in foundations:
         f_id = f.get("id") if isinstance(f, dict) else str(f)
         f_name = f.get("name", f_id.upper()) if isinstance(f, dict) else f_id.upper()
-        logger.info(f"Fetching {f_name} issues from Clotributor API (no linked PRs)...")
+        f_days = source_days.get(f_id.lower(), days_back)
+        logger.info(f"Fetching {f_name} issues from Clotributor API (past {int(f_days)}d, no linked PRs)...")
         foundation_issues = clotributor.fetch_recent_issues(
             foundation=f_id,
-            days_back=days_back,
+            days_back=f_days,
             require_no_linked_prs=require_no_linked_prs,
         )
         for iss in foundation_issues:
@@ -165,11 +184,11 @@ def main():
                 all_issues.append(iss)
 
     # 2. Fetch YC & Emerging Startup issues from GitHub API
-    logger.info("Fetching YC & Emerging Open-Source Startup issues from GitHub...")
+    logger.info(f"Fetching YC & Emerging Open-Source Startup issues from GitHub (past {int(source_days['startup'])}d)...")
     github_client = GitHubClient(token=args.token)
     startup_issues = github_client.fetch_startup_issues(
         startup_projects=startup_projects,
-        days_back=days_back,
+        days_back=source_days["startup"],
         min_comments=min_comments,
         max_comments=max_comments,
         require_unassigned=require_unassigned,
@@ -184,11 +203,11 @@ def main():
 
     # 3. Supplement with direct CNCF GitHub search
     if cncf_projects:
-        logger.info("Checking direct CNCF repositories on GitHub...")
+        logger.info(f"Checking direct CNCF repositories on GitHub (past {int(source_days['cncf'])}d)...")
         cncf_gh_issues = github_client.fetch_cncf_issues(
             cncf_projects=cncf_projects,
             target_labels=target_labels,
-            days_back=days_back,
+            days_back=source_days["cncf"],
             batch_size=batch_size,
         )
         for iss in cncf_gh_issues:
@@ -199,11 +218,11 @@ def main():
 
     # 4. Supplement with direct ASWF GitHub search
     if aswf_projects:
-        logger.info("Checking direct ASWF repositories on GitHub...")
+        logger.info(f"Checking direct ASWF repositories on GitHub (past {int(source_days['aswf'])}d)...")
         aswf_gh_issues = github_client.fetch_aswf_issues(
             aswf_projects=aswf_projects,
             target_labels=target_labels,
-            days_back=days_back,
+            days_back=source_days["aswf"],
             batch_size=batch_size,
         )
         for iss in aswf_gh_issues:
@@ -224,11 +243,11 @@ def main():
 
     # 6. Supplement with direct LFX GitHub search
     if lfx_projects:
-        logger.info("Checking direct LFX repositories on GitHub...")
+        logger.info(f"Checking direct LFX repositories on GitHub (past {int(source_days['lfx'])}d)...")
         lfx_gh_issues = github_client.fetch_lfx_issues(
             lfx_projects=lfx_projects,
             target_labels=target_labels,
-            days_back=days_back,
+            days_back=source_days["lfx"],
             batch_size=batch_size,
         )
         for iss in lfx_gh_issues:
