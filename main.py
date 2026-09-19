@@ -13,6 +13,7 @@ import yaml
 
 from tracker.github_client import GitHubClient
 from tracker.clotributor_client import ClotributorClient
+from tracker.lfx_client import LFXClient
 from tracker.renderer import MarkdownRenderer
 from tracker.notifier import Notifier
 
@@ -123,6 +124,7 @@ def main():
     ])
     cncf_projects = config.get("cncf_projects", [])
     aswf_projects = config.get("aswf_projects", [])
+    lfx_projects = config.get("lfx_projects", [])
     startup_projects = config.get("startup_projects", [])
     target_labels = config.get("target_labels", [])
 
@@ -205,6 +207,31 @@ def main():
             batch_size=batch_size,
         )
         for iss in aswf_gh_issues:
+            url = iss.get("url")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                all_issues.append(iss)
+
+    # 5. Fetch LFX Mentorship projects from official API
+    logger.info("Fetching LFX Mentorship projects from official API...")
+    lfx_client = LFXClient()
+    lfx_api_projects = lfx_client.fetch_mentorship_projects(active_only=True)
+    for iss in lfx_api_projects:
+        url = iss.get("url")
+        if url and url not in seen_urls:
+            seen_urls.add(url)
+            all_issues.append(iss)
+
+    # 6. Supplement with direct LFX GitHub search
+    if lfx_projects:
+        logger.info("Checking direct LFX repositories on GitHub...")
+        lfx_gh_issues = github_client.fetch_lfx_issues(
+            lfx_projects=lfx_projects,
+            target_labels=target_labels,
+            days_back=days_back,
+            batch_size=batch_size,
+        )
+        for iss in lfx_gh_issues:
             url = iss.get("url")
             if url and url not in seen_urls:
                 seen_urls.add(url)
