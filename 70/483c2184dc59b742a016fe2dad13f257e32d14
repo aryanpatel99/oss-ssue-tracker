@@ -1,0 +1,16 @@
+tests/test_html_renderer_lfx.py
+  h_ccbfe03d15f891 1-28
+tracker/html_renderer.py
+  h_ccbfe03d15f891 211-217,372,382,389,417,439-445,580
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "70483c2184dc59b742a016fe2dad13f257e32d14",
+  "prompts": {},
+  "humans": {
+    "h_ccbfe03d15f891": {
+      "author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}

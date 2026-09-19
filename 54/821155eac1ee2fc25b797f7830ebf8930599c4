@@ -1,0 +1,16 @@
+config.yaml
+  h_ccbfe03d15f891 199-252
+tests/test_config.py
+  h_ccbfe03d15f891 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "54821155eac1ee2fc25b797f7830ebf8930599c4",
+  "prompts": {},
+  "humans": {
+    "h_ccbfe03d15f891": {
+      "author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
