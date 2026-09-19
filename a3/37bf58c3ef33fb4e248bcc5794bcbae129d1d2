@@ -1,0 +1,16 @@
+tests/test_github_client_lfx.py
+  h_ccbfe03d15f891 1-29
+tracker/github_client.py
+  h_ccbfe03d15f891 318-335
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a337bf58c3ef33fb4e248bcc5794bcbae129d1d2",
+  "prompts": {},
+  "humans": {
+    "h_ccbfe03d15f891": {
+      "author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
