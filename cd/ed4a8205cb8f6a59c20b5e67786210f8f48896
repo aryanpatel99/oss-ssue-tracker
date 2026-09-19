@@ -1,0 +1,22 @@
+.github/workflows/daily_tracker.yml
+  h_ccbfe03d15f891 5-6
+README.md
+  h_ccbfe03d15f891 7-335
+docs/superpowers/plans/2026-09-19-lfx-mentorship-integration.md
+  h_ccbfe03d15f891 1-362
+index.html
+  h_ccbfe03d15f891 186-192,272,317,347,357,364,392,414-420,555
+reports/2026-09-19.md
+  h_ccbfe03d15f891 1-333
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cded4a8205cb8f6a59c20b5e67786210f8f48896",
+  "prompts": {},
+  "humans": {
+    "h_ccbfe03d15f891": {
+      "author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
