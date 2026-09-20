@@ -6,6 +6,8 @@ tests/test_html_renderer_lfx.py
   s_f6b467e2248c04::t_647a0c40a641f9 2-4,7-10,12-13
 tracker/renderer.py
   s_f6b467e2248c04::t_647a0c40a641f9 142,151
+index.html
+  s_f6b467e2248c04::t_0fde92bbb8ac23 272
 ---
 {
   "schema_version": "authorship/3.0.0",
