@@ -1,0 +1,25 @@
+tracker/html_renderer.py
+  s_f6b467e2248c04::t_647a0c40a641f9 15,19-24,28-29,33
+  s_f6b467e2248c04::t_b843f54940f97b 25-27
+tests/test_html_renderer_lfx.py
+  s_f6b467e2248c04::t_d70cfb4b86121d 11
+  s_f6b467e2248c04::t_647a0c40a641f9 2-4,7-10,12-13
+tracker/renderer.py
+  s_f6b467e2248c04::t_647a0c40a641f9 142,151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "82f16023f154d2d343090fc1443518714a4728ca",
+  "prompts": {},
+  "sessions": {
+    "s_f6b467e2248c04": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0bdf2-d65d-7721-9da0-09cda133f4bd",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
