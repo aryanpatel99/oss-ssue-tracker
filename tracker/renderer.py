@@ -139,7 +139,7 @@ class MarkdownRenderer:
 
     def render_html(self) -> str:
         """Renders complete standalone index.html page."""
-        from .html_renderer import generate_html_page
+        from .html_renderer import format_last_updated, generate_html_page
         enriched_issues = []
         for iss in self.issues:
             iss_copy = dict(iss)
@@ -148,7 +148,7 @@ class MarkdownRenderer:
             enriched_issues.append(iss_copy)
         return generate_html_page(
             enriched_issues,
-            last_updated=self.now_utc.strftime("%Y-%m-%d %H:%M UTC")
+            last_updated=format_last_updated(self.now_utc),
         )
 
     def update_html(self, html_path: str) -> bool:
@@ -160,4 +160,3 @@ class MarkdownRenderer:
             return True
         except Exception:
             return False
-

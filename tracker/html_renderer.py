@@ -12,14 +12,25 @@ Produces a minimal, high-performance dark theme page polished with the better-ui
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
+
+
+IST = timezone(timedelta(hours=5, minutes=30), name="IST")
+
+
+def format_last_updated(timestamp: datetime | None = None) -> str:
+    """Formats a timestamp as concise IST and UTC times for the page header."""
+    utc_time = (timestamp or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    ist_time = utc_time.astimezone(IST).strftime("%I:%M %p").lstrip("0")
+    utc_display = utc_time.strftime("%I:%M %p").lstrip("0")
+    return f"{ist_time} IST · {utc_display} UTC"
 
 
 def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> str:
     """Generates a complete standalone index.html page with embedded issues JSON."""
     if not last_updated:
-        last_updated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        last_updated = format_last_updated()
 
     json_data = json.dumps(issues, ensure_ascii=False)
 

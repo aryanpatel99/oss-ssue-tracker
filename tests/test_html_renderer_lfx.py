@@ -1,7 +1,16 @@
 import unittest
-from tracker.html_renderer import generate_html_page
+from datetime import datetime, timezone
+
+from tracker.html_renderer import format_last_updated, generate_html_page
 
 class TestHTMLRendererLFX(unittest.TestCase):
+    def test_last_updated_in_ist_and_utc(self):
+        timestamp = datetime(2026, 9, 19, 13, 4, tzinfo=timezone.utc)
+        self.assertEqual(
+            format_last_updated(timestamp),
+            "6:34 PM IST · 1:04 PM UTC",
+        )
+
     def test_lfx_rendered_in_html(self):
         issues = [
             {
