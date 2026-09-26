@@ -1,0 +1,32 @@
+tests/test_renderer.py
+  s_79fc1bc29478c4::t_c7466db74bbd5f 1-31
+tests/test_github_client_lfx.py
+  s_79fc1bc29478c4::t_494db5d7ef975a 2
+  s_79fc1bc29478c4::t_0819114e0ce1a4 76-90,100
+  s_79fc1bc29478c4::t_65690e3a8cf534 91-99
+  s_79fc1bc29478c4::t_c7466db74bbd5f 28-75
+.github/workflows/daily_tracker.yml
+  s_79fc1bc29478c4::t_89b34c229e9cbe 5-6
+tracker/renderer.py
+  s_79fc1bc29478c4::t_89b34c229e9cbe 133
+tracker/github_client.py
+  s_79fc1bc29478c4::t_b91e055532f70a 64-72
+  s_79fc1bc29478c4::t_0819114e0ce1a4 114
+  s_79fc1bc29478c4::t_89b34c229e9cbe 15,24,46-63,73-74,77-80,89-113,115-120,122-123,125-126,184,201-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b45ccf52bb030229b813787181b24e9ed4b4bdae",
+  "prompts": {},
+  "sessions": {
+    "s_79fc1bc29478c4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dcb8-2816-79e2-885b-b5eab2d76dd7",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
