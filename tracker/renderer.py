@@ -130,7 +130,7 @@ class MarkdownRenderer:
 
         replacement = f"{start_marker}\n\n{self.render_body()}\n{end_marker}"
         pattern = re.compile(f"{re.escape(start_marker)}.*?{re.escape(end_marker)}", re.DOTALL)
-        new_content = pattern.sub(replacement, content)
+        new_content = pattern.sub(lambda _: replacement, content)
 
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(new_content)

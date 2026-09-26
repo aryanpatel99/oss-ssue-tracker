@@ -12,6 +12,7 @@ class GitHubClient:
     """Client to query GitHub Search API for CNCF and YC/OSS startup issues."""
 
     BASE_URL = "https://api.github.com"
+    MAX_SECONDARY_RETRIES = 3
 
     def __init__(self, token: Optional[str] = None):
         self.token = token or os.environ.get("GITHUB_TOKEN")
@@ -20,6 +21,7 @@ class GitHubClient:
             "Accept": "application/vnd.github+json",
             "User-Agent": "CNCF-Startup-Issue-Tracker",
         })
+        self._secondary_rate_limited = False
         if self.token:
             self.session.headers["Authorization"] = f"Bearer {self.token}"
             logger.info("GitHubClient initialized with authentication token.")
@@ -41,8 +43,41 @@ class GitHubClient:
                 )
                 time.sleep(wait_seconds)
 
+    @staticmethod
+    def _is_secondary_rate_limit(response: requests.Response) -> bool:
+        """Returns whether a response reports GitHub's secondary limit."""
+        return (
+            response.status_code in (403, 429)
+            and "secondary rate limit" in response.text.lower()
+        )
+
+    @staticmethod
+    def _secondary_retry_delay(response: requests.Response, attempt: int) -> int:
+        """Calculates GitHub's requested cooldown with exponential backoff."""
+        retry_after = response.headers.get("retry-after")
+        if retry_after:
+            try:
+                base_delay = max(int(retry_after), 1)
+            except ValueError:
+                base_delay = 60
+        else:
+            remaining = response.headers.get("x-ratelimit-remaining")
+            reset_time = response.headers.get("x-ratelimit-reset")
+            if remaining == "0" and reset_time:
+                try:
+                    base_delay = max(int(reset_time) - int(time.time()) + 2, 1)
+                except ValueError:
+                    base_delay = 60
+            else:
+                base_delay = 60
+        return base_delay * (2 ** attempt)
+
     def search_issues(self, query: str) -> List[Dict[str, Any]]:
         """Executes a search query against GitHub Search API."""
+        if self._secondary_rate_limited:
+            logger.warning("Skipping GitHub search because this run is rate limited.")
+            return []
+
         url = f"{self.BASE_URL}/search/issues"
         params = {
             "q": query,
@@ -51,25 +86,44 @@ class GitHubClient:
             "per_page": 50,
         }
 
-        try:
-            resp = self.session.get(url, params=params, timeout=15)
-            self._handle_rate_limit(resp)
+        for attempt in range(self.MAX_SECONDARY_RETRIES + 1):
+            try:
+                resp = self.session.get(url, params=params, timeout=15)
 
-            if resp.status_code == 200:
-                data = resp.json()
-                return data.get("items", [])
-            elif resp.status_code == 403:
-                logger.error(f"GitHub API 403 Forbidden: {resp.text}")
+                if resp.status_code == 200:
+                    return resp.json().get("items", [])
+                if self._is_secondary_rate_limit(resp):
+                    if attempt == self.MAX_SECONDARY_RETRIES:
+                        self._secondary_rate_limited = True
+                        logger.error(
+                            "GitHub secondary rate limit persisted after %s retries; "
+                            "skipping remaining GitHub searches in this run.",
+                            self.MAX_SECONDARY_RETRIES,
+                        )
+                        return []
+                    delay = self._secondary_retry_delay(resp, attempt)
+                    logger.warning(
+                        "GitHub secondary rate limit reached. Retrying in %s seconds "
+                        "(attempt %s/%s).",
+                        delay,
+                        attempt + 1,
+                        self.MAX_SECONDARY_RETRIES,
+                    )
+                    time.sleep(delay)
+                    continue
+                self._handle_rate_limit(resp)
+                if resp.status_code == 403:
+                    logger.error(f"GitHub API 403 Forbidden: {resp.text}")
+                elif resp.status_code == 422:
+                    logger.error(f"GitHub API 422 Unprocessable Query: {query} -> {resp.text}")
+                else:
+                    logger.error(f"GitHub API returned {resp.status_code}: {resp.text}")
                 return []
-            elif resp.status_code == 422:
-                logger.error(f"GitHub API 422 Unprocessable Query: {query} -> {resp.text}")
+            except requests.RequestException as e:
+                logger.error(f"Network error querying GitHub API: {e}")
                 return []
-            else:
-                logger.error(f"GitHub API returned {resp.status_code}: {resp.text}")
-                return []
-        except requests.RequestException as e:
-            logger.error(f"Network error querying GitHub API: {e}")
-            return []
+
+        return []
 
     def has_linked_pr(self, owner: str, repo: str, issue_number: int) -> bool:
         """
@@ -127,6 +181,7 @@ class GitHubClient:
 
         assignee_filter = "no:assignee " if require_unassigned else ""
         comments_filter = f"comments:{min_comments}..{max_comments} "
+        linked_pr_filter = "-linked:pr " if require_no_linked_prs else ""
 
         window_display = (
             f"{int(days_back * 24)}h"
@@ -143,7 +198,8 @@ class GitHubClient:
 
             # Query: repo:a repo:b is:issue is:open no:assignee comments:1..6 created:>=ISO
             query = (
-                f"{repo_filter} is:issue is:open {assignee_filter}{comments_filter}created:>={since_iso}"
+                f"{repo_filter} is:issue is:open {assignee_filter}{comments_filter}"
+                f"{linked_pr_filter}created:>={since_iso}"
             )
             items = self.search_issues(query)
 
@@ -168,11 +224,6 @@ class GitHubClient:
                 full_repo = f"{owner}/{repo_name}"
 
                 issue_num = item.get("number")
-
-                # Check if a PR is already linked
-                if require_no_linked_prs and self.token:
-                    if self.has_linked_pr(owner, repo_name, issue_num):
-                        continue
 
                 seen_urls.add(html_url)
                 meta = repo_metadata.get(
@@ -332,4 +383,3 @@ class GitHubClient:
             days_back=days_back,
             batch_size=batch_size,
         )
-
