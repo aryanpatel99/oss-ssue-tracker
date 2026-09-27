@@ -56,7 +56,7 @@ class LFXClient:
     def fetch_mentorship_projects(
         self,
         active_only: bool = True,
-        max_pages: int = 5,
+        max_pages: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Fetches mentorship projects from the LFX Mentorship API.
@@ -68,9 +68,16 @@ class LFXClient:
         results = []
         next_key = None
 
-        for page in range(1, max_pages + 1):
+        page = 0
+        seen_page_keys = set()
+        while max_pages is None or page < max_pages:
+            page += 1
             params = {"limit": 50}
             if next_key:
+                if next_key in seen_page_keys:
+                    logger.warning("LFX API repeated a pagination key; stopping to avoid a loop.")
+                    break
+                seen_page_keys.add(next_key)
                 params["nextPageKey"] = next_key
 
             try:

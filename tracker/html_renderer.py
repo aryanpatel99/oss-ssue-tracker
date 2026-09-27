@@ -32,7 +32,19 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
     if not last_updated:
         last_updated = format_last_updated()
 
-    json_data = json.dumps(issues, ensure_ascii=False)
+    def created_at_key(issue: Dict[str, Any]) -> datetime:
+        try:
+            value = (issue.get("created_at") or "").replace("Z", "+00:00")
+            parsed = datetime.fromisoformat(value)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc)
+        except (TypeError, ValueError, OverflowError):
+            return datetime.min.replace(tzinfo=timezone.utc)
+
+    json_data = json.dumps(
+        sorted(issues, key=created_at_key, reverse=True), ensure_ascii=False
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en" class="dark">

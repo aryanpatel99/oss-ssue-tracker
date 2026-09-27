@@ -29,6 +29,14 @@ def relative_time(iso_str: str) -> str:
         return iso_str[:10] if iso_str else "-"
 
 
+def _created_at_sort_key(issue: Dict[str, Any]) -> datetime:
+    try:
+        dt = parser.isoparse(issue.get("created_at") or "")
+        return dt.astimezone(timezone.utc) if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError, OverflowError):
+        return datetime.min.replace(tzinfo=timezone.utc)
+
+
 def clean_markdown_cell(text: str) -> str:
     """Escapes pipes and removes newlines for Markdown table cells."""
     if not text:
@@ -86,11 +94,7 @@ class MarkdownRenderer:
         ]
 
         # Sort issues by creation date descending
-        sorted_issues = sorted(
-            self.issues,
-            key=lambda x: x.get("created_at", ""),
-            reverse=True,
-        )
+        sorted_issues = sorted(self.issues, key=_created_at_sort_key, reverse=True)
 
         for iss in sorted_issues:
             source = iss.get("source", "OSS")
@@ -141,7 +145,7 @@ class MarkdownRenderer:
         """Renders complete standalone index.html page."""
         from .html_renderer import format_last_updated, generate_html_page
         enriched_issues = []
-        for iss in self.issues:
+        for iss in sorted(self.issues, key=_created_at_sort_key, reverse=True):
             iss_copy = dict(iss)
             if "opened" not in iss_copy:
                 iss_copy["opened"] = relative_time(iss.get("created_at", ""))

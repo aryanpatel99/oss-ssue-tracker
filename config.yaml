@@ -202,6 +202,20 @@ startup_projects:
     language: "Python"
 
 # LFX Mentorship Projects (Curated from LFX Mentorship platform)
+# Current LFX projects are also discovered from the official Mentorship API at
+# runtime. This list keeps recently active/known repositories as a fallback.
+lfx_target_labels:
+  - "good first issue"
+  - "good-first-issue"
+  - "help wanted"
+  - "help-wanted"
+  - "lfx-mentorship"
+  - "lfx"
+  - "mentorship"
+  - "beginner"
+  - "difficulty/easy"
+  - "up-for-grabs"
+
 lfx_projects:
   - repo: "wasmedge/wasmedge"
     language: "C++"
@@ -237,6 +251,8 @@ lfx_projects:
     language: "TypeScript"
   - repo: "sonic-net/sonic-buildimage"
     language: "Python/C"
+  - repo: "Apicurio/apicurio-registry"
+    language: "Java"
   - repo: "tremor-rs/tremor-runtime"
     language: "Rust"
   - repo: "konveyor/analyzer-lsp"
@@ -253,4 +269,3 @@ lfx_projects:
     language: "Go"
   - repo: "cncf/mentoring"
     language: "Markdown"
-

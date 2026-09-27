@@ -231,22 +231,27 @@ def main():
                 seen_urls.add(url)
                 all_issues.append(iss)
 
-    # 5. Fetch LFX Mentorship projects from official API
-    logger.info("Fetching LFX Mentorship projects from official API...")
+    # 5. Discover current LFX repositories from the official API. These are
+    # project records, not GitHub issues, so do not render them as issue cards.
+    logger.info("Discovering current LFX Mentorship repositories from official API...")
     lfx_client = LFXClient()
     lfx_api_projects = lfx_client.fetch_mentorship_projects(active_only=True)
-    for iss in lfx_api_projects:
-        url = iss.get("url")
-        if url and url not in seen_urls:
-            seen_urls.add(url)
-            all_issues.append(iss)
+    lfx_repositories = {p["repo"].lower(): p for p in lfx_projects if p.get("repo")}
+    for project in lfx_api_projects:
+        repo = project.get("repo", "")
+        if repo and repo != "LFX-Mentorship" and "/" in repo:
+            lfx_repositories.setdefault(repo.lower(), {
+                "repo": repo,
+                "language": project.get("language", "Unknown"),
+            })
+    lfx_projects = list(lfx_repositories.values())
 
     # 6. Supplement with direct LFX GitHub search
     if lfx_projects:
         logger.info(f"Checking direct LFX repositories on GitHub (past {int(source_days['lfx'])}d)...")
         lfx_gh_issues = github_client.fetch_lfx_issues(
             lfx_projects=lfx_projects,
-            target_labels=target_labels,
+            target_labels=config.get("lfx_target_labels", target_labels),
             days_back=source_days["lfx"],
             batch_size=batch_size,
         )
