@@ -1,0 +1,27 @@
+main.py
+  s_296ae2f4912f29::t_e4e77f3d3e7fc1 234-236,239-247,254
+config.yaml
+  s_296ae2f4912f29::t_bd86d2c7a7cc1a 205-218,254-255
+tracker/lfx_client.py
+  s_296ae2f4912f29::t_044d51fb515274 59,71-74,77-80
+tracker/html_renderer.py
+  s_296ae2f4912f29::t_4f6f32a45178bb 35-47
+tracker/renderer.py
+  s_296ae2f4912f29::t_0a9724df423dbf 32-39,97,148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "00642084711129bc6923e05414eb8f7a887c4acf",
+  "prompts": {},
+  "sessions": {
+    "s_296ae2f4912f29": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e2ce-d225-7eb0-ad8c-805dcfeaefb5",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
