@@ -1,0 +1,19 @@
+index.html
+  s_ed1b5c19f0b0fb::t_22ab4fbff9a25a 272,317
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "20051761bdf1949283d03427462b5a1ec42c5f98",
+  "prompts": {},
+  "sessions": {
+    "s_ed1b5c19f0b0fb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e420-928b-7ad0-bbf9-b53c33e74332",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
