@@ -51,8 +51,8 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CNCF, ASWF &amp; Open Source Startup Issue Tracker</title>
-  <meta name="description" content="Tracks CNCF, ASWF (Academy Software Foundation), and high-growth YC open-source startups for open issues with active discussions, unassigned status, and no open pull requests.">
+  <title>CNCF, ASWF, GSoC &amp; Open Source Startup Issue Tracker</title>
+  <meta name="description" content="Tracks CNCF, ASWF, GSoC organizations, LFX Mentorship, and high-growth YC open-source startups for open issues with active discussions, unassigned status, and no open pull requests.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   
   <!-- Fonts: Geist, Geist Mono, and Inter -->
@@ -240,6 +240,13 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
         </button>
         <button
           type="button"
+          data-source="GSOC"
+          class="filter-source-btn rounded-lg px-3 py-1 transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] text-gray-400 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400/50"
+        >
+          GSoC <span id="count-gsoc" class="ml-1 text-[10px] font-mono tabular-nums text-gray-500">0</span>
+        </button>
+        <button
+          type="button"
           data-source="STARTUP"
           class="filter-source-btn rounded-lg px-3 py-1 transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] text-gray-400 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-400/50"
         >
@@ -393,6 +400,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
       const countCncfEl = document.getElementById('count-cncf');
       const countAsfwEl = document.getElementById('count-aswf');
       const countLfxEl = document.getElementById('count-lfx');
+      const countGsocEl = document.getElementById('count-gsoc');
       const countStartupEl = document.getElementById('count-startup');
       const activeFilterLabel = document.getElementById('active-filter-label');
       const sourceButtons = document.querySelectorAll('.filter-source-btn');
@@ -403,6 +411,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
       const cncfCount = issues.filter(i => (i.source || '').toUpperCase() === 'CNCF').length;
       const aswfCount = issues.filter(i => (i.source || '').toUpperCase() === 'ASWF').length;
       const lfxCount = issues.filter(i => (i.source || '').toUpperCase() === 'LFX').length;
+      const gsocCount = issues.filter(i => (i.source || '').toUpperCase() === 'GSOC').length;
       const startupCount = issues.filter(i => (i.source || '').toUpperCase() === 'STARTUP').length;
 
       badgeTotalEl.textContent = `${{totalCount}} Active`;
@@ -410,6 +419,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
       countCncfEl.textContent = cncfCount;
       if (countAsfwEl) countAsfwEl.textContent = aswfCount;
       if (countLfxEl) countLfxEl.textContent = lfxCount;
+      if (countGsocEl) countGsocEl.textContent = gsocCount;
       countStartupEl.textContent = startupCount;
 
       function escapeHtml(str) {{
@@ -438,6 +448,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
           const isCncf = srcUpper === 'CNCF';
           const isAswf = srcUpper === 'ASWF';
           const isLfx = srcUpper === 'LFX';
+          const isGsoc = srcUpper === 'GSOC';
           let sourceLabel = 'Startup';
           let badgeClasses = 'border-pink-400/20 bg-pink-500/10 text-pink-300';
           let dotClasses = 'bg-pink-400';
@@ -466,6 +477,13 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
             cardHoverBorder = 'hover:border-purple-500/30';
             cardHoverGlow = 'hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4),0_0_0_1px_rgba(168,85,247,0.15)]';
             titleHover = 'group-hover:text-purple-300';
+          }} else if (isGsoc) {{
+            sourceLabel = 'GSoC';
+            badgeClasses = 'border-amber-400/20 bg-amber-500/10 text-amber-300';
+            dotClasses = 'bg-amber-400';
+            cardHoverBorder = 'hover:border-amber-500/30';
+            cardHoverGlow = 'hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4),0_0_0_1px_rgba(245,158,11,0.15)]';
+            titleHover = 'group-hover:text-amber-300';
           }}
 
           const repo = issue.repo || '';
@@ -600,7 +618,7 @@ def generate_html_page(issues: List[Dict[str, Any]], last_updated: str = "") -> 
         // Update Label
         let filterParts = [];
         if (currentSource !== 'ALL') {{
-          const srcLabels = {{ 'CNCF': 'CNCF', 'ASWF': 'ASWF', 'LFX': 'LFX', 'STARTUP': 'Startups' }};
+          const srcLabels = {{ 'CNCF': 'CNCF', 'ASWF': 'ASWF', 'LFX': 'LFX', 'GSOC': 'GSoC', 'STARTUP': 'Startups' }};
           filterParts.push(srcLabels[currentSource] || currentSource);
         }}
         if (selectedTag) filterParts.push(`tag: "${{selectedTag}}"`);

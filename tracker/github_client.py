@@ -125,31 +125,6 @@ class GitHubClient:
 
         return []
 
-    def has_linked_pr(self, owner: str, repo: str, issue_number: int) -> bool:
-        """
-        Checks whether any pull request is already linked/cross-referenced to this issue.
-        Uses GitHub Timeline API if authenticated.
-        """
-        if not self.token:
-            return False  # Avoid burning unauthenticated rate limits on timeline calls
-
-        url = f"{self.BASE_URL}/repos/{owner}/{repo}/issues/{issue_number}/timeline"
-        try:
-            resp = self.session.get(url, timeout=10)
-            self._handle_rate_limit(resp)
-            if resp.status_code == 200:
-                events = resp.json()
-                for ev in events:
-                    # Look for cross-referenced pull requests
-                    if ev.get("event") == "cross-referenced":
-                        source = ev.get("source", {})
-                        issue = source.get("issue", {})
-                        if issue.get("pull_request") is not None:
-                            return True
-            return False
-        except Exception:
-            return False
-
     def fetch_startup_issues(
         self,
         startup_projects: List[Dict[str, Any]],
@@ -363,6 +338,23 @@ class GitHubClient:
             target_labels=target_labels,
             source="ASWF",
             default_language="C++",
+            days_back=days_back,
+            batch_size=batch_size,
+        )
+
+    def fetch_gsoc_issues(
+        self,
+        gsoc_projects: List[Dict[str, Any]],
+        target_labels: List[str],
+        days_back: Union[int, float] = 14,
+        batch_size: int = 6,
+    ) -> List[Dict[str, Any]]:
+        """Fetches newcomer & mentorship issues from GSoC organization repos via GitHub API."""
+        return self.fetch_foundation_issues(
+            projects=gsoc_projects,
+            target_labels=target_labels,
+            source="GSoC",
+            default_language="Python",
             days_back=days_back,
             batch_size=batch_size,
         )

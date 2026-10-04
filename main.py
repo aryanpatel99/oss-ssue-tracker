@@ -43,19 +43,40 @@ def resolve_source_days_back(
     """Resolves tailored lookback window in days for each source."""
     if override_hours is not None:
         val = float(override_hours) / 24.0
-        return {"cncf": val, "aswf": val, "lfx": val, "startup": val, "default": val}
+        return {"cncf": val, "aswf": val, "lfx": val, "gsoc": val, "startup": val, "default": val}
     elif override_days is not None:
         val = float(override_days)
-        return {"cncf": val, "aswf": val, "lfx": val, "startup": val, "default": val}
+        return {"cncf": val, "aswf": val, "lfx": val, "gsoc": val, "startup": val, "default": val}
     else:
         default_days = float(settings.get("days_back", 7))
         return {
             "cncf": float(settings.get("cncf_days_back", 14)),
             "aswf": float(settings.get("aswf_days_back", 14)),
             "lfx": float(settings.get("lfx_days_back", 30)),
+            "gsoc": float(settings.get("gsoc_days_back", 14)),
             "startup": float(settings.get("startup_days_back", 7)),
             "default": default_days,
         }
+
+
+def cleanup_old_reports(reports_dir: str, retention_days: int = 30) -> None:
+    """Removes report files older than retention_days."""
+    if not os.path.isdir(reports_dir):
+        return
+    from datetime import datetime, timedelta
+    cutoff = datetime.now() - timedelta(days=retention_days)
+    for filename in os.listdir(reports_dir):
+        if not filename.endswith(".md"):
+            continue
+        try:
+            date_str = filename.replace(".md", "")
+            file_date = datetime.strptime(date_str, "%Y-%m-%d")
+            if file_date < cutoff:
+                filepath = os.path.join(reports_dir, filename)
+                os.remove(filepath)
+                logger.info(f"Removed old report: {filename}")
+        except ValueError:
+            continue
 
 
 def main():
@@ -149,6 +170,7 @@ def main():
     cncf_projects = config.get("cncf_projects", [])
     aswf_projects = config.get("aswf_projects", [])
     lfx_projects = config.get("lfx_projects", [])
+    gsoc_projects = config.get("gsoc_projects", [])
     startup_projects = config.get("startup_projects", [])
     target_labels = config.get("target_labels", [])
 
@@ -231,7 +253,22 @@ def main():
                 seen_urls.add(url)
                 all_issues.append(iss)
 
-    # 5. Discover current LFX repositories from the official API. These are
+    # 5. Fetch GSoC organization issues from GitHub
+    if gsoc_projects:
+        logger.info(f"Checking GSoC organization repositories on GitHub (past {int(source_days['gsoc'])}d)...")
+        gsoc_gh_issues = github_client.fetch_gsoc_issues(
+            gsoc_projects=gsoc_projects,
+            target_labels=config.get("gsoc_target_labels", target_labels),
+            days_back=source_days["gsoc"],
+            batch_size=batch_size,
+        )
+        for iss in gsoc_gh_issues:
+            url = iss.get("url")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                all_issues.append(iss)
+
+    # Discover current LFX repositories from the official API. These are
     # project records, not GitHub issues, so do not render them as issue cards.
     logger.info("Discovering current LFX Mentorship repositories from official API...")
     lfx_client = LFXClient()
@@ -246,7 +283,7 @@ def main():
             })
     lfx_projects = list(lfx_repositories.values())
 
-    # 6. Supplement with direct LFX GitHub search
+    # Supplement with direct LFX GitHub search
     if lfx_projects:
         logger.info(f"Checking direct LFX repositories on GitHub (past {int(source_days['lfx'])}d)...")
         lfx_gh_issues = github_client.fetch_lfx_issues(
@@ -272,6 +309,14 @@ def main():
         print("=" * 60 + "\n")
         print(renderer.render_body())
         return
+
+    # Clean up old reports (keep last 30 days)
+    reports_dir_path = (
+        args.reports_dir
+        if os.path.isabs(args.reports_dir)
+        else os.path.join(project_root, args.reports_dir)
+    )
+    cleanup_old_reports(reports_dir_path, retention_days=30)
 
     # Save daily digest archive
     if args.save_report:
