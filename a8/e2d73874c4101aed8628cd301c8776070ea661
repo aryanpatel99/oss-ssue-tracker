@@ -1,0 +1,41 @@
+main.py
+  s_768686ad7fe3b2::t_58555f5091437c 313-320
+  s_768686ad7fe3b2::t_f87570bcdd4277 256-270
+  s_768686ad7fe3b2::t_b23a919fe573cc 46,49,56,62-79
+  s_768686ad7fe3b2::t_06bc2935ea8799 286
+  s_768686ad7fe3b2::t_7f699b9fd46d10 173
+  s_768686ad7fe3b2::t_ab07b7c6a2b499 271
+  s_768686ad7fe3b2::t_8da0137c5c5d6a 80-81
+tracker/github_client.py
+  s_768686ad7fe3b2::t_691fa2b5f8c20e 345-361
+config.yaml
+  s_768686ad7fe3b2::t_be649c3b957bb7 252-269,271-283,285-302,311,313-325,327-332,334,341,343-346,353,355-360,365,367-368,373-381,383-386,398,405
+  s_768686ad7fe3b2::t_816164cdd60cfb 8
+  s_768686ad7fe3b2::t_f4aefe0180197a 205-251
+  s_768686ad7fe3b2::t_67f9692d78944a 270,284,303-310,312,326,333,335-340,342,347-352,354,361-364,366,369-372,382,387-397,399-404
+tracker/html_renderer.py
+  s_768686ad7fe3b2::t_07cc83d8549378 54-55
+  s_768686ad7fe3b2::t_c2898d986b79fd 243-247
+  s_768686ad7fe3b2::t_6c62a771246be3 451,480-486
+  s_768686ad7fe3b2::t_a43a0c6f93b380 403,414,422
+  s_768686ad7fe3b2::t_3580569dd99d3b 621
+  s_768686ad7fe3b2::t_5434054f07d01f 241-242
+CLAUDE.md
+  s_768686ad7fe3b2::t_52b4b710be7e56 1-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a8e2d73874c4101aed8628cd301c8776070ea661",
+  "prompts": {},
+  "sessions": {
+    "s_768686ad7fe3b2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "803ecbf6-9af3-4ce9-90ae-f28cdd081964",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Aryan Patel <aryanpatel6215@gmail.com>"
+    }
+  }
+}
